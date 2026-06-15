@@ -1,7 +1,7 @@
 name: iOS Build
 on:
   push:
-    branches: [ main ] # تأكد أن اسم الفرع عندك هو main
+    branches: [ main ]
 
 jobs:
   build:
@@ -14,7 +14,8 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-          flutter-version: '3.22.0' # يمكنك تغييرها لإصدارك أو تركها لجلب الأحدث
+          # قمنا بترقية الإصدار هنا ليناسب متطلبات مشروعك
+          flutter-version: '3.22.2' 
 
       - name: Install dependencies
         run: flutter pub get
@@ -26,6 +27,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ios-app-bundle
-          # هذا المسار يبحث عن أي مجلد ينتهي بـ .app داخل مخرجات البناء
           path: build/ios/iphoneos/*.app
-          if-no-files-found: error # سيعطيك تنبيهاً إذا لم يجد الملف
