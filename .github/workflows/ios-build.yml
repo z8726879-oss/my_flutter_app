@@ -16,24 +16,16 @@ jobs:
           channel: 'stable'
           flutter-version: '3.22.2'
 
-      - name: Update and Fix Dependencies
-        run: |
-          # تحديث التبعيات لتتوافق مع إصدار فلاتر في السيرفر
-          flutter pub upgrade
-          flutter pub get
+      - name: Install dependencies
+        run: flutter pub get
 
-      - name: Pre-build iOS
-        run: |
-          # توليد ملفات Xcode الضرورية
-          flutter build ios --config-only --no-codesign
-
-      - name: Build iOS App
-        # استخدام الأمر المباشر لتجاوز فحص الحزم
-        run: |
-          flutter build ios --release --no-codesign
+      - name: Build for Simulator (No Signing Required)
+        # تعديل الأمر ليبني للمحاكي (iphonesimulator) بدلاً من الجهاز الحقيقي
+        run: flutter build ios --sim-actual --no-codesign
 
       - name: Upload iOS Artifact
         uses: actions/upload-artifact@v4
         with:
           name: ios-app-bundle
-          path: build/ios/iphoneos/*.app
+          # المسار الجديد للملف الناتج للمحاكي
+          path: build/ios/iphonesimulator/*.app
