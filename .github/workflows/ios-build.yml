@@ -16,19 +16,21 @@ jobs:
           channel: 'stable'
           flutter-version: '3.22.2'
 
-      - name: Fix Swift Packages Error
+      - name: Update and Fix Dependencies
         run: |
-          flutter clean
+          # تحديث التبعيات لتتوافق مع إصدار فلاتر في السيرفر
+          flutter pub upgrade
           flutter pub get
-          # تعطيل ميزة Swift Package Manager مؤقتاً لضمان البناء التقليدي
-          flutter config --no-native-assets
-          # توليد ملفات الربط يدوياً
+
+      - name: Pre-build iOS
+        run: |
+          # توليد ملفات Xcode الضرورية
           flutter build ios --config-only --no-codesign
 
       - name: Build iOS App
+        # استخدام الأمر المباشر لتجاوز فحص الحزم
         run: |
-          # نستخدم هذا الأمر تحديداً لتجاوز فحص الحزم المفقودة في Xcode
-          flutter build ios --release --no-codesign --cmd-switch="-skipPackagePluginResolution"
+          flutter build ios --release --no-codesign
 
       - name: Upload iOS Artifact
         uses: actions/upload-artifact@v4
