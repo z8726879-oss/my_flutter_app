@@ -1,20 +1,31 @@
 name: iOS Build
 on:
   push:
-    branches: [ main ] # سيعمل الكود عند رفع أي تحديث للفرع الرئيسي
+    branches: [ main ] # تأكد أن اسم الفرع عندك هو main
 
 jobs:
   build:
-    runs-on: macos-latest # هنا نطلب جهاز ماك مجاني من GitHub
+    runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: subosito/flutter-action@v2
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-      - run: flutter pub get
-      - run: flutter build ios --release --no-codesign # بناء التطبيق بدون الحاجة لحساب مطور مدفوع
-- name: Upload iOS Build
+          flutter-version: '3.22.0' # يمكنك تغييرها لإصدارك أو تركها لجلب الأحدث
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build iOS App
+        run: flutter build ios --release --no-codesign
+
+      - name: Upload iOS Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ios-app
-          path: build/ios/iphoneos/Runner.app # مسار الملف الناتج
+          name: ios-app-bundle
+          # هذا المسار يبحث عن أي مجلد ينتهي بـ .app داخل مخرجات البناء
+          path: build/ios/iphoneos/*.app
+          if-no-files-found: error # سيعطيك تنبيهاً إذا لم يجد الملف
