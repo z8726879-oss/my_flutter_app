@@ -13,3 +13,8 @@ jobs:
           channel: 'stable'
       - run: flutter pub get
       - run: flutter build ios --release --no-codesign # بناء التطبيق بدون الحاجة لحساب مطور مدفوع
+- name: Upload iOS Build
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-app
+          path: build/ios/iphoneos/Runner.app # مسار الملف الناتج
