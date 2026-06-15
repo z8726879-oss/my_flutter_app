@@ -16,17 +16,14 @@ jobs:
           channel: 'stable'
           flutter-version: '3.22.2'
 
-      - name: Install dependencies
-        run: flutter pub get
-
-      # خطوة إضافية لضمان توليد ملفات الـ iOS والـ Plugins بشكل سليم
-      - name: Prepare iOS Project
+      - name: Clean and Repair iOS
         run: |
-          flutter create . --platforms=ios
+          flutter clean
           flutter pub get
-          cd ios
-          pod install || true 
-        # استخدمنا pod install لضمان ربط المكتبات يدوياً إذا فشل التوليد التلقائي
+          # مسح مجلد الـ ios وإعادة إنشائه لضمان سلامة الملفات
+          rm -rf ios/Flutter/ephemeral
+          flutter precache --ios
+          flutter build ios --config-only
 
       - name: Build iOS App
         run: flutter build ios --release --no-codesign
