@@ -1,0 +1,15 @@
+name: iOS Build
+on:
+  push:
+    branches: [ main ] # سيعمل الكود عند رفع أي تحديث للفرع الرئيسي
+
+jobs:
+  build:
+    runs-on: macos-latest # هنا نطلب جهاز ماك مجاني من GitHub
+    steps:
+      - uses: actions/checkout@v3
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+      - run: flutter pub get
+      - run: flutter build ios --release --no-codesign # بناء التطبيق بدون الحاجة لحساب مطور مدفوع
