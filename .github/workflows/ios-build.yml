@@ -16,16 +16,18 @@ jobs:
           channel: 'stable'
           flutter-version: '3.22.2'
 
-      - name: Install dependencies
-        run: flutter pub get
+      - name: Reconstruct iOS Project
+        run: |
+          flutter clean
+          rm -rf ios
+          flutter create . --platforms=ios
+          flutter pub get
 
       - name: Build for Simulator
-        # هذا هو الأمر الصحيح لبناء نسخة المحاكي بدون توقيع
         run: flutter build ios --simulator --no-codesign
 
       - name: Upload iOS Artifact
         uses: actions/upload-artifact@v4
         with:
           name: ios-app-simulator
-          # تأكد من المسار الصحيح لمخرجات المحاكي
           path: build/ios/iphonesimulator/*.app
