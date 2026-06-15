@@ -1,35 +1,30 @@
-name: Android Build
+name: iOS Build
 on:
   push:
     branches: [ main ]
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Setup Java
-        uses: actions/setup-java@v3
-        with:
-          distribution: 'zulu'
-          java-version: '17'
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-          # حذفنا رقم الإصدار المحدد ليتجنب التعارض
+          flutter-version: '3.22.2' # إصدار حديث يتوافق مع متطلبات مشروعك
 
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Build Android APK
-        run: flutter build apk --release
+      - name: Build iOS App
+        run: flutter build ios --release --no-codesign
 
-      - name: Upload APK
+      - name: Upload iOS Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: my-app-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          name: ios-app-bundle
+          path: build/ios/iphoneos/*.app
+
