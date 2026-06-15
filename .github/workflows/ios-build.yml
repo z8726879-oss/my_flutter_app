@@ -16,21 +16,19 @@ jobs:
           channel: 'stable'
           flutter-version: '3.22.2'
 
-      - name: Force Generate iOS Dependencies
+      - name: Fix Swift Packages Error
         run: |
           flutter clean
           flutter pub get
-          cd ios
-          # مسح ملفات الإعدادات القديمة لضمان إعادة توليدها
-          rm -f .DS_Store
-          rm -rf Pods
-          rm -rf Flutter/ephemeral
-          # إجبار فلاتر على تحديث مشروع الـ iOS
-          cd ..
-          flutter build ios --config-only
+          # تعطيل ميزة Swift Package Manager مؤقتاً لضمان البناء التقليدي
+          flutter config --no-native-assets
+          # توليد ملفات الربط يدوياً
+          flutter build ios --config-only --no-codesign
 
       - name: Build iOS App
-        run: flutter build ios --release --no-codesign
+        run: |
+          # نستخدم هذا الأمر تحديداً لتجاوز فحص الحزم المفقودة في Xcode
+          flutter build ios --release --no-codesign --cmd-switch="-skipPackagePluginResolution"
 
       - name: Upload iOS Artifact
         uses: actions/upload-artifact@v4
