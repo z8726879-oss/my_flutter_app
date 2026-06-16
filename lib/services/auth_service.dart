@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 
 class AuthService {
   // الرابط الأساسي للسيرفر (Android Emulator: 10.0.2.2 | Chrome: localhost)
-  static const String baseUrl = 'http://127.0.0';
+  static const String baseUrl = 'http://127.0.0.1';
 
   // =============================================================
   // متغيرات الحالة (Static State)
