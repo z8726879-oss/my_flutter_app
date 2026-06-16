@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:my_new_app/main_navigation_screen.dart'; // التعديل هنا: استيراد MainNavigationScreen بدلاً من CompaniesScreen
+import 'services/socket_service.dart';
 
 import 'register_screen.dart';
 import 'services/auth_service.dart'; // التعديل هنا: استيراد auth_service بدلاً من api_service
@@ -44,11 +45,17 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      // التعديل هنا: استدعاء AuthService وتمرير البارامترات بأسمائها الصحيحة
+      // استدعاء AuthService وتمرير البارامترات بأسمائها الصحيحة
       await AuthService.login(
         phone: phoneController.text.trim(),
         password: passwordController.text.trim(),
       );
+
+      // ✨ الحل السحري: جلب معرّف الصيدلية التي سجلت دخولها فوراً وتشغيل السوكيت عالمياً
+      final pharmacyId = AuthService.currentPharmacy?['id'];
+      if (pharmacyId != null) {
+        SocketService.connect(pharmacyId.toString());
+      }
 
       // التحقق الآمن من وجود الواجهة قبل الانتقال
       if (mounted) {
@@ -56,7 +63,7 @@ class _LoginScreenState extends State<LoginScreen> {
           context,
           MaterialPageRoute(
             builder: (_) => const MainNavigationScreen(),
-          ), // الانتقال لصفحة التبويبات وليس الشركات فقط
+          ),
         );
       }
     } catch (e) {

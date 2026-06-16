@@ -2,27 +2,20 @@
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 
 class SocketService {
-  // ✨ التعديل الأول: إزالة late وجعله Nullable لمنع الشاشة الحمراء
   static IO.Socket? _socket;
 
-  // جيتر (Getter) للوصول للسوكيت بأمان من أي مكان
   static IO.Socket get socket {
     if (_socket == null) {
-      throw Exception("يجب استدعاء دالة connect أولاً قبل استخدام السوكيت");
+      throw Exception("أولاً قبل استخدام السوكيت يجب استدعاء دالة connect");
     }
     return _socket!;
   }
 
-  static void connect({
-    required Function(dynamic) onNewRequest,
-    required Function(dynamic) onOrderUpdated,
-    required Function(dynamic) onOfferUpdated,
-  }) {
-    // 👈 إذا كان متصلاً بالفعل لا نكرر الاتصال
+  static void connect(String pharmacyId) {
     if (_socket != null && _socket!.connected) return;
 
     _socket = IO.io(
-      "http://localhost:3000",
+      "http://127.0.0.1:3000",
       IO.OptionBuilder()
           .setTransports(['websocket'])
           .enableAutoConnect()
@@ -31,13 +24,13 @@ class SocketService {
 
     _socket!.onConnect((_) {
       // ignore: avoid_print
-      print("✅ تم الاتصال بنظام البث اللحظي بنجاح");
+      print("✅ تم الاتصال بنظام البث اللحظي بنجاح للشركة والصيدلية");
     });
 
-    // ✨ الاستماع للأحداث (Events)
-    _socket!.on("new_request", (data) => onNewRequest(data));
-    _socket!.on("request_updated", (data) => onOrderUpdated(data));
-    _socket!.on("offer_updated", (data) => onOfferUpdated(data));
+    _socket!.on("notification_$pharmacyId", (data) {
+      // ignore: avoid_print
+      print("🔔 إشعار جديد مستلم في الخلفية: ${data['message']}");
+    });
 
     // ignore: avoid_print
     _socket!.onDisconnect((_) => print("❌ انقطع الاتصال بالسيرفر"));

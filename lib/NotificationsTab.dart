@@ -60,21 +60,20 @@ class _PharmacyNotificationsTabState extends State<PharmacyNotificationsTab> {
     final pharmacyId = AuthService.currentPharmacy?['id'];
     if (pharmacyId == null) return;
 
-    // ✨ الحل الجذري للشاشة الحمراء: تهيئة الاتصال قبل محاولة الوصول للـ socket
-    SocketService.connect(
-      onNewRequest: (data) {},
-      onOrderUpdated: (data) {},
-      onOfferUpdated: (data) {},
-    );
+    // 1️⃣ استدعاء الاتصال العالمي ليظل السوكيت يعمل في كل التطبيق
+    SocketService.connect(pharmacyId.toString());
 
-    // الآن البرنامج "يضمن" أن SocketService.socket ليس فارغاً
+    // 2️⃣ هنا نستمع للسوكيت داخل الصفحة لعرض الإشعار في القائمة فوراً إذا كانت الصفحة مفتوحة
     SocketService.socket.on("notification_$pharmacyId", (data) {
       if (mounted) {
-        _pushNewNotification(
-          title: data['title'] ?? "تنبيه جديد",
-          message: data['message'] ?? "",
-        );
+        setState(() {
+          _pushNewNotification(
+            title: data['title'] ?? "تنبيه جديد 🔔",
+            message: data['message'] ?? "",
+          );
+        });
 
+        // 3️⃣ إظهار الإشعار المحلي للمستخدم فوق الشاشة
         NotificationService.showNotification(
           context,
           message: data['message'] ?? "لديك إشعار جديد",
