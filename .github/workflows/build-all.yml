@@ -1,26 +1,45 @@
+name: Build All
+on:
+  push:
+    branches: [ main ]
+
+jobs:
   android-job:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Setup Java
-        uses: actions/setup-java@v3
+      - uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
-          java-version: '17' # حافظنا على 17 لضمان الاستقرار
-
+          java-version: '17'
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
           flutter-version: '3.22.2'
-
-      - name: Fix Gradle/Groovy Conflict
-        run: |
-          flutter pub get
-          # هذا السطر مهم لتجاوز مشاكل التوافق في النسخ الحديثة
-          flutter build apk --release --no-pub --dart-define=org.gradle.jvmargs="-Xmx2048m -XX:MaxMetaspaceSize=512m"
-
+      - run: flutter pub get
+      - run: flutter build apk --release
       - uses: actions/upload-artifact@v4
         with:
           name: android-apk
           path: build/app/outputs/flutter-apk/app-release.apk
+
+  ios-job:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          flutter-version: '3.22.2'
+      - name: Reconstruct iOS
+        run: |
+          flutter clean
+          rm -rf ios
+          flutter create . --platforms=ios
+          flutter pub get
+      - name: Build for Simulator
+        run: flutter build ios --simulator --no-codesign
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ios-app-simulator
+          path: build/ios/iphonesimulator/*.app
