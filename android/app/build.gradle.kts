@@ -21,14 +21,16 @@ android {
         jvmTarget = "1.8"
     }
 
-    defaultConfig {
+        defaultConfig {
         applicationId = "com.example.my_new_app"
         minSdk = flutter.minSdkVersion 
         targetSdk = 36
         
-        versionCode = (flutter.versionCode ?: 1)
-        versionName = flutter.versionName ?: "1.0.0"
+        // أضفنا الأقواس هنا لحل مشكلة Function invocation
+        versionCode = flutter.versionCode()
+        versionName = flutter.versionName()
     }
+
 
     buildTypes {
         release {
