@@ -16,6 +16,9 @@ dependencies:
   cupertino_icons: ^1.0.8
   audioplayers: ^5.2.1
   flutter_local_notifications: ^17.2.2
+  # ✨ تم إضافة مكاتب الفايربيز هنا دون مسح أي شيء
+  firebase_core: ^3.0.0
+  firebase_messaging: ^15.0.0
 
 dev_dependencies:
   flutter_test:

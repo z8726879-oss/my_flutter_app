@@ -4,12 +4,31 @@ import 'services/notification_service.dart'; // استيراد خدمة الإش
 // ignore: unused_import
 import 'services/socket_service.dart'; // استيراد محرك الربط اللحظي
 
+// مكاتب الفايربيز السحابية
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+
 void main() async {
   // التأكد من تهيئة أدوات فلاتر قبل تشغيل أي خدمة
   WidgetsFlutterBinding.ensureInitialized();
 
-  // ✨ تهيئة محرك الإشعارات والصوت عند إقلاع التطبيق (مواصفات عالمية)
+  // 1️⃣ تهيئة خدمات الفايربيز السحابية
+  await Firebase.initializeApp();
+
+  // 2️⃣ طلب الإذن الرسمي والمنبثق لظهور الإشعارات على شاشة الصيدلي
+  await FirebaseMessaging.instance.requestPermission(
+    alert: true,
+    badge: true,
+    sound: true,
+  );
+
+  // تهيئة محرك الإشعارات والصوت عند إقلاع التطبيق
   await NotificationService.init();
+
+  // ✨ 3️⃣ استخراج وطباعة الـ Token الخاص بجهازك لنسخه
+  String? token = await FirebaseMessaging.instance.getToken();
+  // ignore: avoid_print
+  print("🔑 FCM TOKEN: $token");
 
   runApp(const PharmacyMobileApp());
 }
@@ -28,18 +47,14 @@ class PharmacyMobileApp extends StatelessWidget {
       // ==========================================
       theme: ThemeData(
         useMaterial3: true,
-        // تخصيص الألوان الطبية المعتمدة في مشروعك الفخم
         primaryColor: const Color(0xFF007A87),
         colorScheme: ColorScheme.fromSeed(
           seedColor: const Color(0xFF007A87),
           primary: const Color(0xFF007A87),
-          secondary: const Color(0xFF10B981), // الأخضر للنجاح والعروض
+          secondary: const Color(0xFF10B981),
         ),
-        // استخدام خط كايرو (تأكد من تعريفه في pubspec.yaml)
         fontFamily: 'Cairo',
         scaffoldBackgroundColor: const Color(0xFFF8FAFC),
-
-        // تحسين مظهر النصوص بشكل عام
         textTheme: const TextTheme(
           displayLarge:
               TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold),
@@ -47,7 +62,6 @@ class PharmacyMobileApp extends StatelessWidget {
         ),
       ),
 
-      // نقطة الانطلاق: شاشة تسجيل الدخول لحماية البيانات
       home: const LoginScreen(),
     );
   }
