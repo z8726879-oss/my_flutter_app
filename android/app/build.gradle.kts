@@ -1,25 +1,32 @@
 plugins {
     id("com.android.application")
+    id("kotlin-android") // أضفنا هذا السطر ليتعرف على أوامر كوتلن
     id("dev.flutter.flutter-gradle-plugin")
 }
 
 android {
     namespace = "com.example.my_new_app"
-    compileSdk = 36 // غيرناها لـ 36 لضمان التوافق مع المكتبات
+    compileSdk = 36 
 
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
-        // أضفنا سطر التفعيل هنا داخل مكانها الصحيح
         isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
+    }
+
+    // تصحيح طريقة كتابة جافا وكوتلن داخل بلوك أندرويد
+    kotlinOptions {
+        jvmTarget = "1.8"
     }
 
     defaultConfig {
         applicationId = "com.example.my_new_app"
         minSdk = flutter.minSdkVersion 
         targetSdk = 36
+        
+        // تصحيح الأخطاء التي ظهرت في الصور السابقة
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
@@ -28,13 +35,6 @@ android {
         release {
             signingConfig = signingConfigs.getByName("debug")
         }
-    }
-}
-
-// تم تصحيح هذا الجزء ليتوافق مع معايير كوتلن الحديثة
-kotlin {
-    compilerOptions {
-        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8)
     }
 }
 
