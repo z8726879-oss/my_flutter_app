@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:my_new_app/main_navigation_screen.dart'; // التعديل هنا: استيراد MainNavigationScreen بدلاً من CompaniesScreen
 import 'services/socket_service.dart';
-
+import 'services/notification_service.dart';
 import 'register_screen.dart';
 import 'services/auth_service.dart'; // التعديل هنا: استيراد auth_service بدلاً من api_service
 
@@ -55,6 +55,7 @@ class _LoginScreenState extends State<LoginScreen> {
       final pharmacyId = AuthService.currentPharmacy?['id'];
       if (pharmacyId != null) {
         SocketService.connect(pharmacyId.toString());
+        await NotificationService.registerDeviceToken(pharmacyId as int);
       }
 
       // التحقق الآمن من وجود الواجهة قبل الانتقال
