@@ -1,18 +1,25 @@
-import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:audioplayers/audioplayers.dart';
+
+// معالج الخلفية لـ Firebase
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  debugPrint("🔔 إشعار خلفية: ${message.notification?.title}");
+}
 
 class NotificationService {
-  // تعريف المحركات كـ static لضمان العمل في كامل التطبيق
   static final AudioPlayer _audioPlayer = AudioPlayer();
   static final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
 
   // =============================================================
-  // 1. إعداد الإشعارات (تُستدعى مرة واحدة في main.dart)
+  // 1. إعداد محرك الإشعارات والصوت المتقدم (تُستدعى في main.dart)
   // =============================================================
   static Future<void> init() async {
-    // إعداد أيقونة الإشعارات للأندرويد
+    // إعدادات أيقونة الإشعارات الافتراضية لأندرويد
     const AndroidInitializationSettings androidSettings =
         AndroidInitializationSettings('@mipmap/ic_launcher');
 
@@ -22,50 +29,97 @@ class NotificationService {
 
     await _localNotifications.initialize(initSettings);
 
-    // إنشاء قناة تنبيه للأندرويد (ضروري لعمل الصوت في النسخ الحديثة)
+    // 🔊 المحرك البرمجي لربط نظام الصوت بقناة أندرويد الرسمية (Android Channel Audio Engine)
+    // نحدد ملف التنبيه بدون الامتداد لتتعرف عليه الـ SDK محلياً كـ Raw Resource إذا لزم الأمر
     const AndroidNotificationChannel channel = AndroidNotificationChannel(
       'pharma_notifications_id',
       'تنبيهات مستودع الأدوية',
       description: 'إشعارات الطلبات، التعديلات، والعروض الجديدة',
       importance: Importance.max,
       playSound: true,
+      // ربط القناة بملف الصوت بالنظام المكتبي الداخلي للأندرويد
+      sound: RawResourceAndroidNotificationSound(
+          'notification_sound_for_whatsapp'),
     );
 
+    // تسجيل القناة داخل نظام تشغيل أندرويد لفرض تشغيل الصوت المخصص
     await _localNotifications
         .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>()
         ?.createNotificationChannel(channel);
+
+    // تفعيل لقط إشعارات Firebase
+    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      if (message.notification != null) {
+        showSystemNotification(
+          title: message.notification!.title ?? "تنبيه جديد",
+          body: message.notification!.body ?? "",
+        );
+      }
+    });
   }
 
   // =============================================================
-  // 2. محرك تشغيل الصوت (متوافق مع أحدث إصدارات audioplayers)
+  // 2. محرك تشغيل الصوت (متوافق مع أحدث إصدارات audioplayers 5.x)
   // =============================================================
   static Future<void> playNotificationSound() async {
     try {
-      // إيقاف أي صوت سابق لمنع التداخل
+      // إيقاف المحرك البرمجي للصوت إذا كان مشغولاً لإعادة تشغيله فوراً (Anti-overlapping)
       if (_audioPlayer.state == PlayerState.playing) {
         await _audioPlayer.stop();
       }
 
-      // تشغيل ملف الصوت الخاص بك من الـ Assets
+      // ضبط خصائص الصوت برمجياً (Audio Context) ليعامل كصوت تنبيه ونغمة رنين وليس موسيقى
+      await _audioPlayer.setAudioContext(const AudioContext(
+        android: AudioContextAndroid(
+          contentType: AndroidContentType.music,
+          usageType: AndroidUsageType.notification,
+          audioFocus: AndroidAudioFocus.gainTransientMayDuck,
+        ),
+        iOS: AudioContextIOS(
+          category: AVAudioSessionCategory.ambient,
+        ),
+      ));
+
+      // تشغيل ملف الصوت المخصص من مجلد الـ assets
       await _audioPlayer.play(
         AssetSource('sounds/notification-sound-for-whatsapp.mp3'),
       );
     } catch (e) {
-      debugPrint("🛑 خطأ في محرك الصوت: ${e.toString()}");
+      debugPrint("🛑 خطأ في محرك الصوت البرمجي: ${e.toString()}");
     }
   }
 
   // =============================================================
-  // 3. الإشعار العائم الفخم (Internal UI SnackBar)
+  // 3. جلب الـ FCM Token وتحديثه في قاعدة البيانات
   // =============================================================
-  static void showNotification(
-    BuildContext context, {
-    required String message,
-    bool isSuccess = true,
-  }) {
-    // تشغيل الصوت تلقائياً مع ظهور الإشعار
-    playNotificationSound();
+  static Future<void> registerDeviceToken(int pharmacyId) async {
+    try {
+      FirebaseMessaging messaging = FirebaseMessaging.instance;
+      await messaging.requestPermission(alert: true, badge: true, sound: true);
+      String? token = await messaging.getToken();
+
+      if (token != null) {
+        final url = Uri.parse("http://192.168.1");
+        await http.post(
+          url,
+          headers: {"Content-Type": "application/json"},
+          body: jsonEncode({"pharmacy_id": pharmacyId, "fcm_token": token}),
+        );
+      }
+    } catch (e) {
+      debugPrint("❌ فشل تسجيل الـ Token: $e");
+    }
+  }
+
+  // =============================================================
+  // 4. الإشعار العائم الفخم داخل الواجهة (SnackBar)
+  // =============================================================
+  static void showNotification(BuildContext context,
+      {required String message, bool isSuccess = true}) {
+    playNotificationSound(); // تشغيل صوت المحرك تلقائياً
 
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
@@ -73,10 +127,8 @@ class NotificationService {
         backgroundColor:
             isSuccess ? const Color(0xFF10B981) : const Color(0xFF007A87),
         behavior: SnackBarBehavior.floating,
-        elevation: 6,
         margin: const EdgeInsets.all(20),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-        duration: const Duration(seconds: 4),
         content: Directionality(
           textDirection: TextDirection.rtl,
           child: Row(
@@ -85,16 +137,9 @@ class NotificationService {
                   color: Colors.white, size: 22),
               const SizedBox(width: 12),
               Expanded(
-                child: Text(
-                  message,
-                  style: const TextStyle(
-                    fontFamily: 'Cairo',
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
+                  child: Text(message,
+                      style: const TextStyle(
+                          fontFamily: 'Cairo', fontWeight: FontWeight.bold))),
             ],
           ),
         ),
@@ -103,10 +148,13 @@ class NotificationService {
   }
 
   // =============================================================
-  // 4. إرسال إشعار للنظام (يظهر في ستارة الإشعارات العلوية)
+  // 5. إرسال إشعار للنظام (يظهر في ستارة الإشعارات العلوية للهاتف)
   // =============================================================
   static Future<void> showSystemNotification(
       {required String title, required String body}) async {
+    // تشغيل المحرك الديناميكي للصوت فوراً
+    playNotificationSound();
+
     const AndroidNotificationDetails androidDetails =
         AndroidNotificationDetails(
       'pharma_notifications_id',
@@ -114,6 +162,9 @@ class NotificationService {
       importance: Importance.max,
       priority: Priority.high,
       playSound: true,
+      // تمرير نغمة الصوت لتتعرف عليها ستارة الإشعارات عند إغلاق التطبيق
+      sound: RawResourceAndroidNotificationSound(
+          'notification_sound_for_whatsapp'),
     );
 
     const NotificationDetails details =
