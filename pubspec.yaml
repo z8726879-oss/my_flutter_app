@@ -39,4 +39,4 @@ flutter_launcher_icons:
 flutter:
   uses-material-design: true
   assets:
-    - assets/sounds/notification-sound-for-whatsapp.mp3
+    - assets/sounds/notification_sound_for_whatsapp.mp3
