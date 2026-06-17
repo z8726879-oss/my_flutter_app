@@ -102,7 +102,7 @@ class NotificationService {
       String? token = await messaging.getToken();
 
       if (token != null) {
-        final url = Uri.parse("http://192.168.43.68:5000/api");
+        final url = Uri.parse("http://192.168.43.68:5000/api/update-token");
         await http.post(
           url,
           headers: {"Content-Type": "application/json"},
