@@ -15,7 +15,7 @@ class SocketService {
     if (_socket != null && _socket!.connected) return;
 
     _socket = IO.io(
-      "http://127.0.0.1:3000",
+      "http://192.168.43.68:5000/api",
       IO.OptionBuilder()
           .setTransports(['websocket'])
           .enableAutoConnect()
