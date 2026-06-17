@@ -9,7 +9,7 @@ class ApiService {
   // الإعدادات الأساسية (Base Config)
   // قم بتغيير localhost إلى IP السيرفر الحقيقي عند الرفع
   // =============================================================
-  static const String baseUrl = '"http://192.168.43.68:5000/api"';
+  static const String baseUrl = 'http://192.168.43.68:5000/api';
 
   // ✨ المحرك الأمني: إرفاق التوكن تلقائياً في هيدرز كل طلب
   static Map<String, String> get _headers {
