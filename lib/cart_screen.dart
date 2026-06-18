@@ -153,63 +153,113 @@ class _CartScreenState extends State<CartScreen> {
         borderRadius: BorderRadius.circular(15),
         side: const BorderSide(color: Color(0xFFE2E8F0), width: 1),
       ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-        leading: CircleAvatar(
-          // ignore: deprecated_member_use
-          backgroundColor: const Color(0xFF007A87).withOpacity(0.08),
-          child: const Icon(Icons.medication_rounded, color: Color(0xFF007A87)),
-        ),
-        title: Text(
-          item.name,
-          textAlign: TextAlign.right,
-          style: const TextStyle(
-              fontWeight: FontWeight.bold, fontFamily: 'Cairo', fontSize: 15),
-        ),
-        // --- التعديل هنا لإظهار السعر والعرض معاً ---
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.end, // محاذاة لليمين
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        child: Row(
+          textDirection:
+              TextDirection.rtl, // لضمان الترتيب الصحيح من اليمين لليسار
           children: [
-            Text(
-              "السعر: ${item.price ?? 0} ل.س",
-              style: const TextStyle(
-                  fontSize: 12, color: Colors.grey, fontFamily: 'Cairo'),
+            // 1. أيقونة الدواء اليمنى
+            CircleAvatar(
+              // ignore: deprecated_member_use
+              backgroundColor: const Color(0xFF007A87).withOpacity(0.08),
+              child: const Icon(Icons.medication_rounded,
+                  color: Color(0xFF007A87)),
             ),
-            // إظهار العرض فقط إذا كان موجوداً ومختلفاً عن النص الافتراضي
-            if (item.offer != null &&
-                item.offer.isNotEmpty &&
-                item.offer != "لا يوجد عرض")
-              Padding(
-                padding: const EdgeInsets.only(top: 2),
-                child: Text(
-                  "العرض المرفق: ${item.offer}",
-                  style: const TextStyle(
-                      fontSize: 11,
-                      color: Colors.orange,
+            const SizedBox(width: 12),
+
+            // 2. قسم النصوص (يأخذ المساحة المتبقية بمرونة ويمنع التداخل)
+            Expanded(
+              child: Column(
+                crossAxisAlignment:
+                    CrossAxisAlignment.start, // محاذاة النص لليمين مع الـ RTL
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    item.name,
+                    maxLines: 1,
+                    overflow: TextOverflow
+                        .ellipsis, // إظهار نقاط إذا كان الاسم طويلاً جداً
+                    style: const TextStyle(
                       fontWeight: FontWeight.bold,
-                      fontFamily: 'Cairo'),
-                ),
+                      fontFamily: 'Cairo',
+                      fontSize: 14,
+                      color: Color(0xFF1A202C),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    "السعر: ${item.price ?? 0} ل.س",
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey,
+                      fontFamily: 'Cairo',
+                    ),
+                  ),
+                  if (item.offer != null &&
+                      item.offer.isNotEmpty &&
+                      item.offer != "لا يوجد عرض") ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      "العرض المرفق: ${item.offer}",
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: Colors.orange,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'Cairo',
+                      ),
+                    ),
+                  ],
+                ],
               ),
-          ],
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            IconButton(
-                icon:
-                    const Icon(Icons.remove_circle_outline, color: Colors.grey),
-                onPressed: () => changeQty(index, -1)),
-            Text("${item.quantity}",
-                style: const TextStyle(fontWeight: FontWeight.bold)),
-            IconButton(
-                icon: const Icon(Icons.add_circle_outline,
-                    color: Color(0xFF007A87)),
-                onPressed: () => changeQty(index, 1)),
-            const SizedBox(width: 8),
-            IconButton(
-                icon: const Icon(Icons.delete_outline_rounded,
-                    color: Colors.redAccent),
-                onPressed: () => removeItem(item.drugId)),
+            ),
+
+            // 3. قسم أزرار التحكم والعداد (يسار الكرت)
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              textDirection: TextDirection
+                  .ltr, // لجعل أزرار الناقص والزائد تترتب بشكل طبيعي استجابة للمستخدم
+              children: [
+                // زر الناقص
+                IconButton(
+                  constraints:
+                      const BoxConstraints(), // تقليل الهوامش الداخلية للزر
+                  padding: const EdgeInsets.all(4),
+                  icon: const Icon(Icons.remove_circle_outline,
+                      color: Colors.grey, size: 22),
+                  onPressed: () => changeQty(index, -1),
+                ),
+                // العداد
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                  child: Text(
+                    "${item.quantity}",
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'Cairo',
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+                // زر الزائد
+                IconButton(
+                  constraints: const BoxConstraints(),
+                  padding: const EdgeInsets.all(4),
+                  icon: const Icon(Icons.add_circle_outline,
+                      color: Color(0xFF007A87), size: 22),
+                  onPressed: () => changeQty(index, 1),
+                ),
+                const SizedBox(width: 6),
+                // زر الحذف
+                IconButton(
+                  constraints: const BoxConstraints(),
+                  padding: const EdgeInsets.all(4),
+                  icon: const Icon(Icons.delete_outline_rounded,
+                      color: Colors.redAccent, size: 22),
+                  onPressed: () => removeItem(item.drugId),
+                ),
+              ],
+            ),
           ],
         ),
       ),
