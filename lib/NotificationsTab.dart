@@ -1,6 +1,5 @@
 // ignore_for_file: file_names
-
-import 'dart:convert'; // ضروري جداً لعمليات الحفظ (jsonEncode/Decode)
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'services/socket_service.dart';
@@ -22,28 +21,59 @@ class _PharmacyNotificationsTabState extends State<PharmacyNotificationsTab> {
   @override
   void initState() {
     super.initState();
-    _loadStoredNotifications(); // 1. جلب الإشعارات المحفوظة في الهاتف فور تشغيل الصفحة
-    setupSocketListener(); // 2. ربط السوكيت
+    _loadStoredNotifications(); // 1. جلب الإشعارات من قاعدة بيانات السيرفر ومن الهاتف
+    setupSocketListener(); // 2. ربط السوكيت الفوري
   }
 
-  // ==========================================
-  // 1. منطق التخزين الدائم (Shared Preferences)
-  // ==========================================
-
+  // ========================================================
+  // 1. منطق التخزين المطور: الدمج بين السيرفر والـ Local Storage
+  // ========================================================
   Future<void> _loadStoredNotifications() async {
     final prefs = await SharedPreferences.getInstance();
-    final String? storedData = prefs.getString('saved_notifications');
 
-    if (storedData != null) {
-      if (mounted) {
-        setState(() {
-          notifications =
-              List<Map<String, dynamic>>.from(jsonDecode(storedData));
-          isLoading = false;
-        });
+    // أ. أولاً: نقرأ الإشعارات القديمة المحفوظة في الهاتف لعرضها فوراً دون انتظار الشبكة
+    final String? storedData = prefs.getString('saved_notifications');
+    if (storedData != null && mounted) {
+      setState(() {
+        notifications = List<Map<String, dynamic>>.from(jsonDecode(storedData));
+        isLoading = false;
+      });
+    }
+
+    // ب. ثانياً: نقوم بجلب التحديثات الجديدة من قاعدة بيانات السيرفر لضمان مزامنة الإشعارات المستلمة أثناء غلق التطبيق
+    final pharmacyId = AuthService.currentPharmacy?['id'];
+    if (pharmacyId != null) {
+      try {
+        // استدعاء دالة الـ API التي أضفناها لـ NotificationService
+        final List<dynamic> serverNotifications =
+            await NotificationService.fetchSavedNotifications(pharmacyId);
+
+        if (serverNotifications.isNotEmpty && mounted) {
+          setState(() {
+            // تحويل البيانات القادمة من الباكيند وصياغتها لتتطابق مع تصميم تطبيقك
+            notifications = serverNotifications.map((item) {
+              return {
+                "title": item['title'] ?? "تنبيه جديد 🔔",
+                "body": item['message'] ?? "",
+                "time": "الآن",
+                "is_read":
+                    true // الإشعارات القادمة من السيرفر تعتبر مقروءة مسبقاً في صندوق الوارد
+              };
+            }).toList();
+            isLoading = false;
+          });
+
+          // تحديث الكاش الداخلي للهاتف بالبيانات الجديدة القادمة من السيرفر
+          _saveNotificationsToStorage();
+        }
+      } catch (e) {
+        debugPrint(
+            "⚠️ فشل تحديث البيانات من السيرفر، تم الاعتماد على كاش الهاتف: $e");
       }
-    } else {
-      if (mounted) setState(() => isLoading = false);
+    }
+
+    if (mounted && isLoading) {
+      setState(() => isLoading = false);
     }
   }
 
@@ -60,10 +90,8 @@ class _PharmacyNotificationsTabState extends State<PharmacyNotificationsTab> {
     final pharmacyId = AuthService.currentPharmacy?['id'];
     if (pharmacyId == null) return;
 
-    // 1️⃣ استدعاء الاتصال العالمي ليظل السوكيت يعمل في كل التطبيق
     SocketService.connect(pharmacyId.toString());
 
-    // 2️⃣ هنا نستمع للسوكيت داخل الصفحة لعرض الإشعار في القائمة فوراً إذا كانت الصفحة مفتوحة
     SocketService.socket.on("notification_$pharmacyId", (data) {
       if (mounted) {
         setState(() {
@@ -72,8 +100,6 @@ class _PharmacyNotificationsTabState extends State<PharmacyNotificationsTab> {
             message: data['message'] ?? "",
           );
         });
-
-        // 3️⃣ إظهار الإشعار المحلي للمستخدم فوق الشاشة
         NotificationService.showNotification(
           context,
           message: data['message'] ?? "لديك إشعار جديد",
@@ -93,7 +119,6 @@ class _PharmacyNotificationsTabState extends State<PharmacyNotificationsTab> {
           "is_read": false
         });
       });
-      // 💾 حفظ في الهاتف لضمان عدم ضياع الإشعارات عند إغلاق التطبيق
       _saveNotificationsToStorage();
     }
   }
@@ -119,14 +144,23 @@ class _PharmacyNotificationsTabState extends State<PharmacyNotificationsTab> {
           )
         ],
       ),
-      body: isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: Color(0xFF007A87)))
-          : notifications.isEmpty
-              ? const Center(
-                  child: Text("لا توجد إشعارات حالياً",
-                      style: TextStyle(fontFamily: 'Cairo')))
-              : _buildNotificationsList(),
+      body: Directionality(
+        textDirection: TextDirection
+            .rtl, // إضافة التوجيه العربي لضمان تنسيق النصوص والمحاذاة
+        child: isLoading
+            ? const Center(
+                child: CircularProgressIndicator(color: Color(0xFF007A87)))
+            : notifications.isEmpty
+                ? const Center(
+                    child: Text("لا توجد إشعارات حالياً",
+                        style: TextStyle(fontFamily: 'Cairo')))
+                : RefreshIndicator(
+                    color: const Color(0xFF007A87),
+                    onRefresh:
+                        _loadStoredNotifications, // ميزة السحب لأسفل لمزامنة الإشعارات مع قاعدة البيانات يدوياً
+                    child: _buildNotificationsList(),
+                  ),
+      ),
     );
   }
 
@@ -148,11 +182,11 @@ class _PharmacyNotificationsTabState extends State<PharmacyNotificationsTab> {
           ),
           margin: const EdgeInsets.only(bottom: 10),
           child: ListTile(
-            title: Text(item['title'],
+            title: Text(item['title'] ?? '',
                 style: const TextStyle(
                     fontWeight: FontWeight.bold, fontFamily: 'Cairo')),
-            subtitle:
-                Text(item['body'], style: const TextStyle(fontFamily: 'Cairo')),
+            subtitle: Text(item['body'] ?? '',
+                style: const TextStyle(fontFamily: 'Cairo')),
             trailing: Icon(Icons.circle,
                 size: 10,
                 color: isUnread ? const Color(0xFF007A87) : Colors.transparent),

@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:my_new_app/main_navigation_screen.dart'; // التعديل هنا: استيراد MainNavigationScreen بدلاً من CompaniesScreen
 import 'services/socket_service.dart';
 import 'services/notification_service.dart';
-import 'register_screen.dart';
 import 'services/auth_service.dart'; // التعديل هنا: استيراد auth_service بدلاً من api_service
+import 'pre_verification_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -229,7 +229,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const RegisterScreen()),
+                    MaterialPageRoute(
+                        builder: (_) => const PreVerificationScreen()),
                   );
                 },
                 child: const Text(
@@ -242,10 +243,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
               ),
-            ],
-          ),
-        ),
-      ),
-    );
+            ], // إغلاق قائمة عناصر الـ Column
+          ), // إغلاق الـ Column
+        ), // إغلاق الـ SingleChildScrollView
+      ), // إغلاق الـ Padding
+    ); // إغلاق الـ Scaffold أو دالة الـ build
   }
 }

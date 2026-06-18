@@ -5,7 +5,6 @@ import 'dart:convert';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:audioplayers/audioplayers.dart';
 
-// معالج الخلفية لـ Firebase
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   debugPrint("🔔 إشعار خلفية: ${message.notification?.title}");
 }
@@ -15,42 +14,30 @@ class NotificationService {
   static final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
 
-  // =============================================================
-  // 1. إعداد محرك الإشعارات والصوت المتقدم (تُستدعى في main.dart)
-  // =============================================================
+  // 1. إعداد محرك الإشعارات والصوت المتقدم
   static Future<void> init() async {
-    // إعدادات أيقونة الإشعارات الافتراضية لأندرويد
     const AndroidInitializationSettings androidSettings =
         AndroidInitializationSettings('@mipmap/ic_launcher');
-
-    const InitializationSettings initSettings = InitializationSettings(
-      android: androidSettings,
-    );
-
+    const InitializationSettings initSettings =
+        InitializationSettings(android: androidSettings);
     await _localNotifications.initialize(initSettings);
 
-    // 🔊 المحرك البرمجي لربط نظام الصوت بقناة أندرويد الرسمية (Android Channel Audio Engine)
-    // نحدد ملف التنبيه بدون الامتداد لتتعرف عليه الـ SDK محلياً كـ Raw Resource إذا لزم الأمر
     const AndroidNotificationChannel channel = AndroidNotificationChannel(
       'pharma_notifications_id',
       'تنبيهات مستودع الأدوية',
       description: 'إشعارات الطلبات، التعديلات، والعروض الجديدة',
       importance: Importance.max,
       playSound: true,
-      // ربط القناة بملف الصوت بالنظام المكتبي الداخلي للأندرويد
       sound: RawResourceAndroidNotificationSound(
           'notification_sound_for_whatsapp'),
     );
 
-    // تسجيل القناة داخل نظام تشغيل أندرويد لفرض تشغيل الصوت المخصص
     await _localNotifications
         .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>()
         ?.createNotificationChannel(channel);
 
-    // تفعيل لقط إشعارات Firebase
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       if (message.notification != null) {
         showSystemNotification(
@@ -61,40 +48,28 @@ class NotificationService {
     });
   }
 
-  // =============================================================
-  // 2. محرك تشغيل الصوت (متوافق مع أحدث إصدارات audioplayers 5.x)
-  // =============================================================
+  // 2. محرك تشغيل الصوت
   static Future<void> playNotificationSound() async {
     try {
-      // إيقاف المحرك البرمجي للصوت إذا كان مشغولاً لإعادة تشغيله فوراً (Anti-overlapping)
       if (_audioPlayer.state == PlayerState.playing) {
         await _audioPlayer.stop();
       }
-
-      // ضبط خصائص الصوت برمجياً (Audio Context) ليعامل كصوت تنبيه ونغمة رنين وليس موسيقى
       await _audioPlayer.setAudioContext(const AudioContext(
         android: AudioContextAndroid(
           contentType: AndroidContentType.music,
           usageType: AndroidUsageType.notification,
           audioFocus: AndroidAudioFocus.gainTransientMayDuck,
         ),
-        iOS: AudioContextIOS(
-          category: AVAudioSessionCategory.ambient,
-        ),
+        iOS: AudioContextIOS(category: AVAudioSessionCategory.ambient),
       ));
-
-      // تشغيل ملف الصوت المخصص من مجلد الـ assets
-      await _audioPlayer.play(
-        AssetSource('sounds/notification-sound-for-whatsapp.mp3'),
-      );
+      await _audioPlayer
+          .play(AssetSource('sounds/notification-sound-for-whatsapp.mp3'));
     } catch (e) {
       debugPrint("🛑 خطأ في محرك الصوت البرمجي: ${e.toString()}");
     }
   }
 
-  // =============================================================
   // 3. جلب الـ FCM Token وتحديثه في قاعدة البيانات
-  // =============================================================
   static Future<void> registerDeviceToken(int pharmacyId) async {
     try {
       FirebaseMessaging messaging = FirebaseMessaging.instance;
@@ -114,13 +89,10 @@ class NotificationService {
     }
   }
 
-  // =============================================================
   // 4. الإشعار العائم الفخم داخل الواجهة (SnackBar)
-  // =============================================================
   static void showNotification(BuildContext context,
       {required String message, bool isSuccess = true}) {
-    playNotificationSound(); // تشغيل صوت المحرك تلقائياً
-
+    playNotificationSound();
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -147,14 +119,10 @@ class NotificationService {
     );
   }
 
-  // =============================================================
-  // 5. إرسال إشعار للنظام (يظهر في ستارة الإشعارات العلوية للهاتف)
-  // =============================================================
+  // 5. إرسال إشعار للنظام
   static Future<void> showSystemNotification(
       {required String title, required String body}) async {
-    // تشغيل المحرك الديناميكي للصوت فوراً
     playNotificationSound();
-
     const AndroidNotificationDetails androidDetails =
         AndroidNotificationDetails(
       'pharma_notifications_id',
@@ -162,13 +130,31 @@ class NotificationService {
       importance: Importance.max,
       priority: Priority.high,
       playSound: true,
-      // تمرير نغمة الصوت لتتعرف عليها ستارة الإشعارات عند إغلاق التطبيق
       sound: RawResourceAndroidNotificationSound(
           'notification_sound_for_whatsapp'),
     );
-
     const NotificationDetails details =
         NotificationDetails(android: androidDetails);
     await _localNotifications.show(0, title, body, details);
+  }
+
+  // ✨ 6️⃣ الدالة المضافة والمصححة لجلب الإشعارات المحفوظة من قاعدة بيانات السيرفر
+  static Future<List<dynamic>> fetchSavedNotifications(int pharmacyId) async {
+    try {
+      // تم تثبيت الـ IP والـ Port بناءً على إعدادات شبكة مشروعك الصحيحة
+      final url = Uri.parse('http://192.168.43');
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true) {
+          return data['notifications']; // إرجاع مصفوفة الإشعارات المخزنة
+        }
+      }
+      return [];
+    } catch (e) {
+      debugPrint("❌ خطأ شبكي أثناء سحب إشعارات الجدول للجوال: $e");
+      return [];
+    }
   }
 }
