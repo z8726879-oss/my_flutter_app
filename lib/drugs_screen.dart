@@ -187,17 +187,45 @@ class _DrugItemCardState extends State<DrugItemCard> {
 
   Widget _buildDrugImage(String? imageStr) {
     if (imageStr == null || imageStr.isEmpty || imageStr.length < 10) {
-      return const Icon(Icons.medication_rounded,
-          size: 40, color: Color(0xFF007A87));
+      return const Icon(
+        Icons.medication_rounded,
+        size: 40,
+        color: Color(0xFF007A87),
+      );
     }
+
+    // إذا كان النص القادم يحتوي على رابط يبدأ بـ http، نقوم بعرضه فوراً كصورة شبكية سريعة
+    if (imageStr.startsWith('http')) {
+      return Image.network(
+        imageStr,
+        fit: BoxFit.contain,
+        // مؤشر تحميل خفيف جداً يظهر أثناء تحميل الصورة لأول مرة
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return const Center(
+            child: SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                  strokeWidth: 2, color: Color(0xFF007A87)),
+            ),
+          );
+        },
+        errorBuilder: (c, e, s) =>
+            const Icon(Icons.broken_image, size: 40, color: Colors.grey),
+      );
+    }
+
+    // كود احتياطي (Fallback) في حال وجود صور قديمة في السيرفر لا تزال بصيغة Base64
     try {
       return Image.memory(
         base64Decode(imageStr),
         fit: BoxFit.contain,
-        errorBuilder: (c, e, s) => const Icon(Icons.broken_image),
+        errorBuilder: (c, e, s) =>
+            const Icon(Icons.broken_image, size: 40, color: Colors.grey),
       );
     } catch (e) {
-      return const Icon(Icons.broken_image);
+      return const Icon(Icons.broken_image, size: 40, color: Colors.grey);
     }
   }
 
