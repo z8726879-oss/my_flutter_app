@@ -30,7 +30,8 @@ class _PreVerificationScreenState extends State<PreVerificationScreen> {
     try {
       // ملاحظة: إذا كنت تختبر الجوال على هاتف حقيقي والسيرفر على الكمبيوتر،
       // استبدل localhost برقم الآيبي (IP) الفعلي للكمبيوتر (مثال: 192.168.1.5)
-      final url = Uri.parse('http://localhost:3000/api/auth/registration-code');
+      final url =
+          Uri.parse('http://192.168.43.68:5000/api/auth/registration-code');
 
       final response = await http.get(url);
 

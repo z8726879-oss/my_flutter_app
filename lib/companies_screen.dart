@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import 'drugs_screen.dart';
+import 'services/notification_service.dart';
+import 'services/auth_service.dart'; // جلب كلاس الهوية لمعرفة الـ ID تلقائياً
 
 class CompaniesScreen extends StatefulWidget {
   const CompaniesScreen({super.key});
@@ -19,7 +21,13 @@ class _CompaniesScreenState extends State<CompaniesScreen> {
   @override
   void initState() {
     super.initState();
-    loadCompanies();
+    loadCompanies(); // 👈 تم التعديل هنا إلى الاسم الأصلي لدالتك المتواجدة بالأسفل
+
+    final pharmacyId = AuthService.currentPharmacy?['id'];
+    if (pharmacyId != null) {
+      NotificationService.registerDeviceToken(
+          int.tryParse(pharmacyId.toString()) ?? 0);
+    }
   }
 
   // ==========================================
