@@ -75,7 +75,7 @@ class NotificationService {
       FirebaseMessaging messaging = FirebaseMessaging.instance;
       await messaging.requestPermission(alert: true, badge: true, sound: true);
       String? token = await messaging.getToken();
-      token = "test_token_from_mobile_123";
+
       if (token != null) {
         final url = Uri.parse("http://192.168.43.68:5000/api/update-token");
         await http.post(
