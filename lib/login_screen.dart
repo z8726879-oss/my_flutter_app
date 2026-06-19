@@ -55,7 +55,13 @@ class _LoginScreenState extends State<LoginScreen> {
       final pharmacyId = AuthService.currentPharmacy?['id'];
       if (pharmacyId != null) {
         SocketService.connect(pharmacyId.toString());
-        await NotificationService.registerDeviceToken(pharmacyId as int);
+
+        int realId = (pharmacyId is int)
+            ? pharmacyId
+            : (int.tryParse(pharmacyId.toString()) ?? 0);
+        if (realId != 0) {
+          NotificationService.registerDeviceToken(realId);
+        }
       }
 
       // التحقق الآمن من وجود الواجهة قبل الانتقال
