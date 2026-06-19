@@ -8,6 +8,7 @@ import 'services/socket_service.dart'; // استيراد محرك الربط ا�
 // مكاتب الفايربيز السحابية
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'services/auth_service.dart'; // 💡 تأكد من استيراد كلاس الـ Auth لجلب معرف الصيدلية
 
 void main() async {
   // التأكد من تهيئة أدوات فلاتر قبل تشغيل أي خدمة
@@ -23,9 +24,22 @@ void main() async {
     sound: true,
   );
 
+  // 💡 [التعديل المضاف هنا]: الاستماع لتغير الرمز تلقائياً في الخلفية وإرساله للسيرفر فوراً
+  FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
+    final pharmacyId = AuthService.currentPharmacy?['id'];
+    if (pharmacyId != null) {
+      int realId = int.tryParse(pharmacyId.toString()) ?? 0;
+      if (realId != 0) {
+        // استدعاء دالة الإرسال للسيرفر لتحديث قاعدة البيانات بالرمز الجديد
+        await NotificationService.registerDeviceToken(realId);
+        debugPrint(
+            "🔄 تم اكتشاف تغير الرمز وتحديثه تلقائياً في السيرفر: $newToken");
+      }
+    }
+  });
+
   // تهيئة محرك الإشعارات والصوت عند إقلاع التطبيق
   await NotificationService.init();
-
   runApp(const PharmacyMobileApp());
 }
 
@@ -104,7 +118,6 @@ class PharmacyMobileApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: "نظام مستودع الأدوية الذكي - الصيادلة",
-
       theme: ThemeData(
         useMaterial3: true,
         primaryColor: const Color(0xFF007A87),
@@ -121,7 +134,6 @@ class PharmacyMobileApp extends StatelessWidget {
           bodyMedium: TextStyle(fontFamily: 'Cairo'),
         ),
       ),
-
       // ✨ استدعاء الدالة السحرية فور تحميل شاشة تسجيل الدخول
       home: Builder(
         builder: (context) {
