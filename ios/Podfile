@@ -23,9 +23,10 @@ post_install do |installer|
       # 1️⃣ توحيد إصدار النشر لكافة المكتبات لمنع التعارض مع الفايربيس
       config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
       
-      # 2️⃣ منع اعتبار التحذيرات كأخطاء قاتلة تؤدي لفشل البناء
+      # 2️⃣ إجبار المترجم على تجاهل كافة التحذيرات وعدم تحويلها لأخطاء قاتلة تفشل البناء
       config.build_settings['GCC_TREAT_WARNINGS_AS_ERRORS'] = 'NO'
       config.build_settings['SWIFT_TREAT_WARNINGS_AS_ERRORS'] = 'NO'
+      config.build_settings['CLANG_WARN_DOCUMENTATION_COMMENTS'] = 'NO'
     end
   end
 end
