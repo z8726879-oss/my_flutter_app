@@ -1,9 +1,11 @@
 platform :ios, '13.0'
 
+# تفعيل الأطر الديناميكية لحل مشكلة الفايربيس
 use_frameworks!
 use_modular_headers!
 
-flutter_root = File.expand_path(File.join('..', '..', '..', '..', 'flutter'), __FILE__)
+# 🛠️ التعديل الجوهري: جلب مسار فلاتر التلقائي والديناميكي المتوافق مع سيرفر GitHub وجهازك المحلي
+flutter_root = ENV['FLUTTER_ROOT'] || File.expand_path(File.join('..', '..', '..', '..', 'flutter'), __FILE__)
 if !File.directory?(flutter_root)
   flutter_root = File.expand_path(File.join('..', '..', 'flutter'), __FILE__)
 end
