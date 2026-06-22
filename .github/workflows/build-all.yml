@@ -49,7 +49,8 @@ jobs:
       - name: Build iOS Application
         run: |
           flutter pub get
-          flutter build ios --simulator --no-codesign
+          # 🌟 التعديل الحاسم: فرض بناء الـ Simulator باستخدام المعمارية الافتراضية للسيرفر لتخطي خطأ الـ EmitModule
+          flutter build ios --simulator --no-codesign --dart-define=DYNAMIC_ARCH=true
 
       - name: Upload iOS App
         uses: actions/upload-artifact@v4
