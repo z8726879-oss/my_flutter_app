@@ -46,15 +46,8 @@ jobs:
           channel: 'stable'
           flutter-version: '3.22.2'
 
-      - name: Reconstruct and Build iOS
+      - name: Build iOS Application
         run: |
-          flutter clean
-          rm -rf ios
-          flutter create . --platforms=ios
-          
-          # 🛠️ التعديل الرئيسي: إجبار ملف Podfile الجديد على استهداف iOS 13.0 لحل مشكلة الفايربيس سحابياً
-          sed -i '' "s/# platform :ios, '12.0'/platform :ios, '13.0'/g" ios/Podfile
-          
           flutter pub get
           flutter build ios --simulator --no-codesign
 
