@@ -197,7 +197,7 @@ class _PharmacyBalanceTabState extends State<PharmacyBalanceTab> {
           ),
           const SizedBox(height: 4),
           Text(
-            "${remainingBalance.toStringAsFixed(0)} ل.س",
+            "${remainingBalance.toStringAsFixed(1)} ل.س",
             style: const TextStyle(
                 fontSize: 26, fontWeight: FontWeight.bold, color: Colors.white),
           ),
@@ -227,7 +227,7 @@ class _PharmacyBalanceTabState extends State<PharmacyBalanceTab> {
             style: const TextStyle(
                 fontFamily: 'Cairo', color: Colors.white70, fontSize: 12)),
         const SizedBox(height: 2),
-        Text("${value.toStringAsFixed(0)} ل.س",
+        Text("${value.toStringAsFixed(1)} ل.س",
             style: TextStyle(
                 fontSize: 14, fontWeight: FontWeight.bold, color: valueColor)),
       ],
@@ -264,7 +264,7 @@ class _PharmacyBalanceTabState extends State<PharmacyBalanceTab> {
             children: [
               // القيمة المالية
               Text(
-                "${isOrder ? '+' : '-'}${log["amount"].toStringAsFixed(0)} ل.س",
+                "${isOrder ? '+' : '-'}${log["amount"].toStringAsFixed(1)} ل.س",
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,

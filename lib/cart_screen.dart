@@ -146,6 +146,7 @@ class _CartScreenState extends State<CartScreen> {
           children: [
             // 1. أيقونة الدواء اليمنى
             CircleAvatar(
+              // ignore: deprecated_member_use
               backgroundColor: const Color(0xFF007A87).withOpacity(0.08),
               child: const Icon(Icons.medication_rounded,
                   color: Color(0xFF007A87)),
@@ -250,6 +251,7 @@ class _CartScreenState extends State<CartScreen> {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
+            // ignore: deprecated_member_use
             color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
             offset: const Offset(0, -4),
@@ -269,7 +271,7 @@ class _CartScreenState extends State<CartScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  "${CartService.getTotalPrice().toStringAsFixed(0)} ل.س",
+                  "${CartService.getTotalPrice().toStringAsFixed(1)} ل.س",
                   style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,

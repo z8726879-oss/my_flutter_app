@@ -134,7 +134,7 @@ class RequestDetailsScreen extends StatelessWidget {
                             color: Colors.grey,
                             fontFamily: 'Cairo')),
                     Text(
-                      "${(price * qty).toStringAsFixed(0)} ل.س",
+                      "${(price * qty).toStringAsFixed(1)} ل.س",
                       style: const TextStyle(
                           color: Color(0xFF10B981), // الأخضر المالي
                           fontWeight: FontWeight.bold,
@@ -151,7 +151,7 @@ class RequestDetailsScreen extends StatelessWidget {
                             color: Colors.grey,
                             fontFamily: 'Cairo')),
                     Text(
-                      "${price.toStringAsFixed(0)} ل.س",
+                      "${price.toStringAsFixed(1)} ل.س",
                       style: const TextStyle(
                           color: Color(0xFF64748B),
                           fontSize: 13,
