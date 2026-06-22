@@ -11,14 +11,16 @@ dependencies:
     sdk: flutter
   http: ^1.2.0
   shared_preferences: ^2.2.3
+  
+  # حزمة السوكيت المستقرة الخاصة بك
   socket_io_client: ^3.1.6
   cupertino_icons: ^1.0.8
   
-  # 🌟 تم قفل إصدارات الفايربيس القديمة المستقرة لتتوافق مع Dart SDK 3.4.3 في السيرفر
+  # 🌟 التعديل الحاسم: خفض الإصدار إلى 14.7.10 لحل تعارض حزمة الـ web الداعمة للسوكيت والفايربيس معاً
   firebase_core: 2.32.0
-  firebase_messaging: 14.9.1
+  firebase_messaging: 14.7.10
   
-  # 🌟 النسخ المستقرة القديمة المتوافقة مع كود الإشعارات والصوت الأصلي الخاص بك
+  # النسخ القديمة المستقرة المتوافقة مع كود الإشعارات والصوت الخاص بك
   audioplayers: 5.2.1
   flutter_local_notifications: 16.1.0
 
@@ -28,7 +30,7 @@ dev_dependencies:
   flutter_lints: ^3.0.0
   flutter_launcher_icons: ^0.14.4
 
-# إعدادات الأيقونة الجديدة
+# إعدادات الأيقونة
 flutter_launcher_icons:
   android: true
   ios: true
