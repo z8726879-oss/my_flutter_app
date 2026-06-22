@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import 'drugs_screen.dart';
-import 'services/notification_service.dart';
+import 'app_notification_manger.dart';
 import 'services/auth_service.dart'; // جلب كلاس الهوية لمعرفة الـ ID تلقائياً
 
 class CompaniesScreen extends StatefulWidget {

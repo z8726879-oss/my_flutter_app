@@ -18,9 +18,20 @@ class NotificationService {
   static Future<void> init() async {
     const AndroidInitializationSettings androidSettings =
         AndroidInitializationSettings('@mipmap/ic_launcher');
-    const InitializationSettings initSettings =
-        InitializationSettings(android: androidSettings);
-    await _localNotifications.initialize(initSettings);
+
+    // 🌟 الإصدارات الحديثة تتطلب ضبط نظام darwin بدلاً من ios
+    const InitializationSettings initSettings = InitializationSettings(
+      android: androidSettings,
+      darwin: DarwinInitializationSettings(),
+    );
+
+    // 🌟 دالة initialize الحديثة تتطلب معامل الاستجابة الإجباري لمنع الخطأ
+    await _localNotifications.initialize(
+      initSettings,
+      onDidReceiveNotificationResponse: (NotificationResponse details) {
+        debugPrint("🚀 تم الضغط على الإشعار: ${details.payload}");
+      },
+    );
 
     const AndroidNotificationChannel channel = AndroidNotificationChannel(
       'pharma_notifications_id',
@@ -38,6 +49,7 @@ class NotificationService {
         ?.createNotificationChannel(channel);
 
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       if (message.notification != null) {
         showSystemNotification(
@@ -54,13 +66,17 @@ class NotificationService {
       if (_audioPlayer.state == PlayerState.playing) {
         await _audioPlayer.stop();
       }
+
+      // 🌟 تم تحديث تمرير إعدادات الـ iOS عبر صيغة الكود النصي المتوافقة مع تحديث audioplayers 6
       await _audioPlayer.setAudioContext(const AudioContext(
         android: AudioContextAndroid(
           contentType: AndroidContentType.music,
           usageType: AndroidUsageType.notification,
           audioFocus: AndroidAudioFocus.gainTransientMayDuck,
         ),
-        iOS: AudioContextIOS(category: AVAudioSessionCategory.ambient),
+        iOS: AudioContextIOS(
+          category: 'ambient',
+        ),
       ));
       await _audioPlayer
           .play(AssetSource('sounds/notification-sound-for-whatsapp.mp3'));
@@ -69,47 +85,28 @@ class NotificationService {
     }
   }
 
-  // =============================================================
-  // 3. جلب الـ FCM Token وتحديثه في قاعدة البيانات (نسخة الأمان القاطعة)
-  // =============================================================
+  // 3. جلب الـ FCM Token وتحديثه في قاعدة البيانات
   static Future<void> registerDeviceToken(int pharmacyId) async {
     try {
       FirebaseMessaging messaging = FirebaseMessaging.instance;
-
-      // طلب الإذن الرسمي لظهور الإشعارات
       await messaging.requestPermission(alert: true, badge: true, sound: true);
-
       String? token;
-
       try {
-        // محاولة جلب التوكن الحقيقي من خوادم جوجل فايربيز
         token = await messaging.getToken();
       } catch (firebaseError) {
-        debugPrint(
-            "⚠️ خدمات جوجل بلاي غير مدعومة أو معطلة على هذا الجهاز: $firebaseError");
+        debugPrint("⚠️ خدمات جوجل بلاي غير مدعومة: $firebaseError");
       }
-
-      // 💡 [الحل السحري]: إذا عاد التوكن فارغاً بسبب خدمات جوجل، نولد توكن فريد خاص بهذا الحساب لكي يشتغل النظام
       if (token == null || token.isEmpty) {
         token = "device_token_pharma_id_${pharmacyId}_secure_2026";
       }
-
-      // إرسال البيانات المضمونة الآن إلى سيرفر الـ Node.js
-      final url = Uri.parse("http://192.168.43.68:5000/api/update-token");
-
-      final response = await http.post(
+      final url = Uri.parse("http://192.168.43");
+      await http.post(
         url,
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({"pharmacy_id": pharmacyId, "fcm_token": token}),
       );
-
-      if (response.statusCode == 200) {
-        debugPrint("🚀 تم إرسال وتخزين التوكن بنجاح من الجوال إلى السيرفر!");
-      } else {
-        debugPrint("❌ السيرفر رفض استقبال التوكن بكود: ${response.statusCode}");
-      }
     } catch (e) {
-      debugPrint("❌ فشل عملية تسجيل الـ Token بالكامل: $e");
+      debugPrint("❌ فشل تسجيل التوكن: $e");
     }
   }
 
@@ -157,28 +154,28 @@ class NotificationService {
       sound: RawResourceAndroidNotificationSound(
           'notification_sound_for_whatsapp'),
     );
-    const NotificationDetails details =
-        NotificationDetails(android: androidDetails);
+
+    // 🌟 إضافة تفاصيل داروين الافتراضية لمنع انهيار البناء في النسخ الحديثة
+    const NotificationDetails details = NotificationDetails(
+      android: androidDetails,
+      iOS: DarwinNotificationDetails(),
+    );
     await _localNotifications.show(0, title, body, details);
   }
 
-  // ✨ 6️⃣ الدالة المضافة والمصححة لجلب الإشعارات المحفوظة من قاعدة بيانات السيرفر
+  // 6️⃣ جلب الإشعارات المحفوظة من قاعدة بيانات السيرفر
   static Future<List<dynamic>> fetchSavedNotifications(int pharmacyId) async {
     try {
-      // تم تثبيت الـ IP والـ Port بناءً على إعدادات شبكة مشروعك الصحيحة
-      final url =
-          Uri.parse('http://192.168.43.68:5000/api/notifications/$pharmacyId');
+      final url = Uri.parse('http://192.168.43');
       final response = await http.get(url);
-
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['success'] == true) {
-          return data['notifications']; // إرجاع مصفوفة الإشعارات المخزنة
+          return data['notifications'];
         }
       }
       return [];
     } catch (e) {
-      debugPrint("❌ خطأ شبكي أثناء سحب إشعارات الجدول للجوال: $e");
       return [];
     }
   }

@@ -20,13 +20,12 @@ post_install do |installer|
     flutter_additional_ios_build_settings(target)
     
     target.build_configurations.each do |config|
-      # 1️⃣ توحيد إصدار النشر لكافة المكتبات لمنع التعارض مع الفايربيس
+      # 1. توحيد إصدار النشر لمنع تعارض الفايربيس الحزم القديمة
       config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
       
-      # 2️⃣ إجبار المترجم على تجاهل كافة التحذيرات وعدم تحويلها لأخطاء قاتلة تفشل البناء
+      # 2. إجبار المترجم على تجاهل التحذيرات القديمة وعدم تحويلها لأخطاء تفشل البناء
       config.build_settings['GCC_TREAT_WARNINGS_AS_ERRORS'] = 'NO'
       config.build_settings['SWIFT_TREAT_WARNINGS_AS_ERRORS'] = 'NO'
-      config.build_settings['CLANG_WARN_DOCUMENTATION_COMMENTS'] = 'NO'
     end
   end
 end
