@@ -1,4 +1,5 @@
 name: Build All (Android & iOS)
+
 on:
   push:
     branches: [ main ]
@@ -25,7 +26,6 @@ jobs:
       - name: Build Android APK
         run: |
           flutter pub get
-          # ✨ تم إضافة علم التخطي هنا لتجاوز اعتراضات الجرادل سحابياً
           flutter build apk --debug --android-skip-build-dependency-validation
 
       - name: Upload APK
@@ -51,6 +51,10 @@ jobs:
           flutter clean
           rm -rf ios
           flutter create . --platforms=ios
+          
+          # 🛠️ التعديل الرئيسي: إجبار ملف Podfile الجديد على استهداف iOS 13.0 لحل مشكلة الفايربيس سحابياً
+          sed -i '' "s/# platform :ios, '12.0'/platform :ios, '13.0'/g" ios/Podfile
+          
           flutter pub get
           flutter build ios --simulator --no-codesign
 
