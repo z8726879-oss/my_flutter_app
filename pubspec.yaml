@@ -1,11 +1,10 @@
 name: my_new_app
 description: "A new Flutter project."
 publish_to: 'none'
-
 version: 1.0.0+1
 
 environment:
-   sdk: '>=3.0.0 <4.0.0'
+  sdk: '>=3.0.0 <4.0.0'
 
 dependencies:
   flutter:
@@ -14,26 +13,26 @@ dependencies:
   shared_preferences: ^2.2.3
   socket_io_client: ^3.1.6
   cupertino_icons: ^1.0.8
+  
+  # 🌟 تم قفل إصدارات الفايربيس القديمة المستقرة لتتوافق مع Dart SDK 3.4.3 في السيرفر
+  firebase_core: 2.32.0
+  firebase_messaging: 14.9.1
+  
+  # 🌟 النسخ المستقرة القديمة المتوافقة مع كود الإشعارات والصوت الأصلي الخاص بك
   audioplayers: 5.2.1
   flutter_local_notifications: 16.1.0
-
-  # ✨ استخدام الصيغة المرنة لحل تعارض السيرفر وجهازك معاً
-  firebase_core: ^4.11.0
-  firebase_messaging: ^16.4.1
-
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^3.0.0
-  # أضفنا هذه المكتبة هنا
   flutter_launcher_icons: ^0.14.4
 
-# إعدادات الأيقونة الجديدة (تأكد من وجود صورة بهذا المسار)
+# إعدادات الأيقونة الجديدة
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/logo.png" 
+  image_path: "assets/logo.png"
   adaptive_icon_background: "#ffffff"
   adaptive_icon_foreground: "assets/logo.png"
 
