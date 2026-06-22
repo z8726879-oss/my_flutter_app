@@ -20,15 +20,16 @@ post_install do |installer|
     flutter_additional_ios_build_settings(target)
     
     target.build_configurations.each do |config|
-      # 1️⃣ تعيين إصدار النظام على 13.0 لكل المكتبات لمنع أي تعارض
+      # 1️⃣ توحيد إصدار النشر لكافة المكتبات
       config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
       
-      # 2️⃣ إجبار Xcode على عدم معاملة التحذيرات كأخطاء (يمنع فشل البناء بسبب التحذيرات المذكورة)
+      # 2️⃣ منع اعتبار التحذيرات أخطاء قاتلة
       config.build_settings['GCC_TREAT_WARNINGS_AS_ERRORS'] = 'NO'
       config.build_settings['SWIFT_TREAT_WARNINGS_AS_ERRORS'] = 'NO'
       
-      # 3️⃣ حل مشكلة بناء الـ Simulator على خوادم GitHub (استبعاد بنيات المعالجات المتعارضة)
-      config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'arm64'
+      # 3️⃣ 🌟 الأسطر الحاسمة: إجبار الـ Xcode على بناء حزم مستقرة للـ Simulator ومنع ضياع المسارات
+      config.build_settings['ONLY_ACTIVE_ARCH'] = 'NO'
+      config.build_settings['BUILD_LIBRARY_FOR_DISTRIBUTION'] = 'YES'
     end
   end
 end
