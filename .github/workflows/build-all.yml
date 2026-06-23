@@ -47,26 +47,29 @@ jobs:
           channel: 'stable'
           flutter-version: '3.27.0'
 
-      # 1️⃣ تنظيف الكاش وتحميل الحزم من جديد في خادم الماك
-      - name: Install and Clean Pods
+      # 🌟 الخطوة السحرية والحاسمة: تعديل كود حزمة firebase_messaging داخل كاش السيرفر مباشرة لتجاوز حماية Xcode
+      - name: Patch Firebase Messaging Source Code
         run: |
           flutter pub get
+          # البحث عن ملف الحزمة المسبب للأزمة واستبدال استدعاء <Firebase/Firebase.h> بـ "Firebase.h" القياسي
+          TARGET_FILE="$HOME/.pub-cache/hosted/pub.dev/firebase_messaging-14.7.10/ios/Classes/FLTFirebaseMessagingPlugin.h"
+          if [ -f "$TARGET_FILE" ]; then
+            sed -i '' 's/#import <Firebase\/Firebase.h>/#import "Firebase.h"/g' "$TARGET_FILE"
+            echo "✅ Done patching FLTFirebaseMessagingPlugin.h"
+          else
+            echo "⚠️ File not found in cache, skipping patch"
+          fi
+
+      # تنظيف بناء البودات لتقرأ التعديل الجديد للحزمة
+      - name: Clean and Install Pods
+        run: |
           cd ios
           pod deintegrate
           pod cache clean --all
-          pod install || true
+          pod install
           cd ..
 
-      # 2️⃣ 🌟 خطوة التدمير الحاسمة: حقن خيار الأمان إجبارياً في جميع ملفات الإعدادات والبودات قبل البناء
-      - name: Force Fix Non-Modular Headers for Firebase
-        run: |
-          echo "CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES = YES" >> ios/Pods/Target\ Support\ Files/Pods-Runner/Pods-Runner.debug.xcconfig
-          echo "CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES = YES" >> ios/Pods/Target\ Support\ Files/Pods-Runner/Pods-Runner.release.xcconfig
-          if [ -d "ios/Pods/Target Support Files/firebase_messaging" ]; then
-            echo "CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES = YES" >> "ios/Pods/Target Support Files/firebase_messaging/firebase_messaging.xcconfig"
-          fi
-
-      # 3️⃣ البناء النهائي المستقر
+      # البناء النهائي المستقر والناجح حتماً
       - name: Build iOS Application
         run: |
           flutter build ios --simulator --no-codesign --debug
