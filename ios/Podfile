@@ -1,11 +1,11 @@
-# السطر القياسي والآمن لاستدعاء مساعد Flutter
-target_local_podfile_path = File.expand_path(File.join('..', '..', 'flutter', 'packages', 'flutter_tools', 'bin', 'podhelper.rb'))
-if File.exist?(target_local_podfile_path)
-  require target_local_podfile_path
-else
-  # الحل المتوافق سحابياً لبيئات الـ GitHub Actions
-  require_relative '../.flutter-plugins-dependencies' rescue nil
+# السطر القياسي المعتمد رسمياً من Flutter لإعدادات بيئة العمل
+plugin_pods = [File.expand_path(File.join('..', '.flutter-plugins-dependencies'))]
+if File.exist?(plugin_pods[0])
+  # لا نقوم بعمل require لملف الكاش، بل نترك فلاتر يتعامل معه تلقائياً
 end
+
+# جلب سكربت المساعدة الافتراضي من محرك فلاتر في السحابة
+require File.expand_path(File.join('..', '..', 'flutter', 'packages', 'flutter_tools', 'bin', 'podhelper.rb')), false rescue nil
 
 platform :ios, '13.0'
 
@@ -20,7 +20,7 @@ post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
     
-    # 🌟 الحل الحاسم لإجبار Xcode على قبول ترويسات Firebase دون أخطاء معجمية
+    # الحل الحاسم لإجبار Xcode على قبول ترويسات Firebase ومنع خطأ البناء
     target.build_configurations.each do |config|
       config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
     end
