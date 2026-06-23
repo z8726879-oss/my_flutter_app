@@ -1,10 +1,22 @@
+# 1️⃣ استدعاء سكربت إعدادات Flutter الأساسية (هذا هو السطر المفقود الذي حل المشكلة)
+path = File.expand_path(File.join('..', '..', 'flutter', 'packages', 'flutter_tools', 'bin', 'podhelper.rb'))
+if File.exists?(path)
+  require path
+else
+  # مسار احتياطي لبيئات الـ CI والـ Runner
+  require File.expand_path(File.join(File.dirname(__FILE__), '..', '.flutter-plugins-dependencies')), false rescue nil
+  # استدعاء تلقائي افتراضي
+  flutter_root = File.expand_path(File.join('..', '..'))
+  require File.expand_path(File.join(flutter_root, 'packages', 'flutter_tools', 'bin', 'podhelper.rb')), false rescue nil
+end
+
 platform :ios, '13.0'
 
-# إعدادات مخرجات Flutter الافتراضية
 target 'Runner' do
   use_frameworks!
   use_modular_headers!
 
+  # تثبيت كافة حزم Flutter والـ Plugins
   flutter_install_all_ios_pods File.dirname(File.expand_path(__FILE__))
 end
 
