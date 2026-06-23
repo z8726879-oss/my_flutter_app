@@ -34,7 +34,7 @@ jobs:
           name: android-apk
           path: build/app/outputs/flutter-apk/app-debug.apk
 
-  ios-job:
+   ios-job:
     runs-on: macos-latest
     steps:
       - name: Checkout code
@@ -46,14 +46,16 @@ jobs:
           channel: 'stable'
           flutter-version: '3.27.0'
 
+      # 🌟 خطوة حاسمة: تعديل إعدادات Xcode الإجبارية للمشروع بالكامل لحل مشكلة Firebase Messaging
+      - name: Inject Xcode Build Settings for Firebase
+        run: |
+          sed -i '' 's/CLANG_WARN_OBJC_ROOT_CLASS = YES;/CLANG_WARN_OBJC_ROOT_CLASS = YES;\n\t\t\t\tCLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES = YES;/g' ios/Runner.xcodeproj/project.pbxproj
+
       - name: Build iOS Application
-        env:
-          # 🌟 تمرير الأمر هنا كمتغير نظام رسمي لحل مشكلة Firebase Headers بشكل صحيح
-          CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES: "YES"
         run: |
           flutter pub get
           flutter build ios --simulator --no-codesign --debug
-          
+
       - name: Upload iOS App
         uses: actions/upload-artifact@v4
         with:
