@@ -8,16 +8,16 @@ require File.expand_path(File.join(flutter_root, 'packages', 'flutter_tools', 'b
 
 platform :ios, '13.0'
 
-# 🌟 إجبار النظام على استخدام الـ Modular Headers لكل الحزم لمنع خطأ Non-modular header
-use_modular_headers!
+# 🌟 خطوة استباقية: إجبار نظام الكوكوبودز على تحويل كافة الحزم إلى Modular بشكل قسري قبل التثبيت
+pre_install do |installer|
+  installer.pod_targets.each do |target|
+    target.instance_variable_set(:@defines_module, true)
+  end
+end
 
 target 'Runner' do
   use_frameworks!
-  
-  # 🌟 تأكيد استخدام الرؤوس النمطية لحزم Firebase بشكل خاص
-  pod 'Firebase', :modular_headers => true
-  pod 'FirebaseCore', :modular_headers => true
-  pod 'FirebaseMessaging', :modular_headers => true
+  use_modular_headers!
 
   flutter_install_all_ios_pods File.dirname(File.expand_path(__FILE__))
 end
@@ -26,10 +26,11 @@ post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
     
-    # تفادي مشاكل ترويسات الإطارات وتعديل إعدادات التوافق سحابياً لكل هدف
+    # 🌟 إجبار الـ Xcode على قبول كافة ملفات الـ Headers لحزم Firebase دون قيود أمنية
     target.build_configurations.each do |config|
       config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
       config.build_settings['DEFINES_MODULE'] = 'YES'
+      config.build_settings['GCC_TREAT_WARNINGS_AS_ERRORS'] = 'NO'
     end
   end
 end
