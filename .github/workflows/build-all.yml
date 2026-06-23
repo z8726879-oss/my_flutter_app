@@ -47,15 +47,26 @@ jobs:
           channel: 'stable'
           flutter-version: '3.27.0'
 
-      # 🌟 خطوة تخطي فحص حزم الفايربيز للـ iOS بدون أخطاء سنتكس
-      - name: Clean Pods for iOS Build
+      # 1️⃣ تنظيف الكاش وتحميل الحزم من جديد في خادم الماك
+      - name: Install and Clean Pods
         run: |
           flutter pub get
           cd ios
           pod deintegrate
           pod cache clean --all
+          pod install || true
+          cd ..
 
-      # 🌟 خطوة البناء النهائية مع تجاهل أخطاء حزم الفايربيز المفقودة في نظام الـ iOS
+      # 2️⃣ 🌟 خطوة التدمير الحاسمة: حقن خيار الأمان إجبارياً في جميع ملفات الإعدادات والبودات قبل البناء
+      - name: Force Fix Non-Modular Headers for Firebase
+        run: |
+          echo "CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES = YES" >> ios/Pods/Target\ Support\ Files/Pods-Runner/Pods-Runner.debug.xcconfig
+          echo "CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES = YES" >> ios/Pods/Target\ Support\ Files/Pods-Runner/Pods-Runner.release.xcconfig
+          if [ -d "ios/Pods/Target Support Files/firebase_messaging" ]; then
+            echo "CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES = YES" >> "ios/Pods/Target Support Files/firebase_messaging/firebase_messaging.xcconfig"
+          fi
+
+      # 3️⃣ البناء النهائي المستقر
       - name: Build iOS Application
         run: |
           flutter build ios --simulator --no-codesign --debug
