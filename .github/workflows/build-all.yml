@@ -47,10 +47,13 @@ jobs:
           flutter-version: '3.27.0'
 
       - name: Build iOS Application
+        env:
+          # 🌟 تمرير الأمر هنا كمتغير نظام رسمي لحل مشكلة Firebase Headers بشكل صحيح
+          CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES: "YES"
         run: |
           flutter pub get
-          flutter build ios --simulator --no-codesign --debug CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES=YES
-
+          flutter build ios --simulator --no-codesign --debug
+          
       - name: Upload iOS App
         uses: actions/upload-artifact@v4
         with:
