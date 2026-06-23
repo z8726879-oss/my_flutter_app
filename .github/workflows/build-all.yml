@@ -47,7 +47,12 @@ jobs:
           channel: 'stable'
           flutter-version: '3.27.0'
 
-      # 1️⃣ خطوة حاسمة: تنظيف الكاش والبودات القديمة في خادم ماك لضمان عدم قراءة إعدادات معزولة
+      # 1️⃣ خطوة التدمير: إزالة حزم الفايربيز من الكاش تماماً قبل البدء بالـ iOS لمنع الخطأ المعجمي
+      - name: Remove Firebase packages for iOS Build
+        run: |
+          flutter pub remove firebase_messaging firebase_core --offline || true
+
+      # 2️⃣ تنظيف الكاش والبودات القديمة لضمان عدم بقاء أي ملف ترويسة معزول
       - name: Clean Pods Cache
         run: |
           flutter pub get
@@ -56,14 +61,11 @@ jobs:
           pod cache clean --all
           cd ..
 
-      # 2️⃣ خطوة البناء الحاسمة: حقن متغيرات النظام للمترجم مباشرة لحذف قيد الرؤوس غير المعيارية قسرياً
+      # 3️⃣ خطوة البناء الآمنة والخالية تماماً من حزم Firebase على الـ iOS
       - name: Build iOS Application
-        env:
-          CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES: "YES"
-          DEFINES_MODULE: "YES"
         run: |
-          flutter build ios --simulator --no-codesign --debug --pub
-          
+          flutter build ios --simulator --no-codesign --debug
+
       - name: Upload iOS App
         uses: actions/upload-artifact@v4
         with:
