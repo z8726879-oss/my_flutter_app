@@ -47,15 +47,23 @@ jobs:
           channel: 'stable'
           flutter-version: '3.27.0'
 
-      - name: Inject Xcode Build Settings for Firebase
-        run: |
-          sed -i '' 's/CLANG_WARN_OBJC_ROOT_CLASS = YES;/CLANG_WARN_OBJC_ROOT_CLASS = YES;\n\t\t\t\tCLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES = YES;/g' ios/Runner.xcodeproj/project.pbxproj
-
-      - name: Build iOS Application
+      # 1️⃣ خطوة حاسمة: تنظيف الكاش والبودات القديمة في خادم ماك لضمان عدم قراءة إعدادات معزولة
+      - name: Clean Pods Cache
         run: |
           flutter pub get
-          flutter build ios --simulator --no-codesign --debug
+          cd ios
+          pod deintegrate
+          pod cache clean --all
+          cd ..
 
+      # 2️⃣ خطوة البناء الحاسمة: حقن متغيرات النظام للمترجم مباشرة لحذف قيد الرؤوس غير المعيارية قسرياً
+      - name: Build iOS Application
+        env:
+          CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES: "YES"
+          DEFINES_MODULE: "YES"
+        run: |
+          flutter build ios --simulator --no-codesign --debug --pub
+          
       - name: Upload iOS App
         uses: actions/upload-artifact@v4
         with:
