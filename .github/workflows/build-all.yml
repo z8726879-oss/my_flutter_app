@@ -47,18 +47,13 @@ jobs:
           channel: 'stable'
           flutter-version: '3.27.0'
 
-      # 🌟 الخطوة السحرية والحاسمة: تعديل كود حزمة firebase_messaging داخل كاش السيرفر مباشرة لتجاوز حماية Xcode
-      - name: Patch Firebase Messaging Source Code
+      # 🌟 التعديل الخارق: البحث الشامل والتعديل الإجباري لملف الترويسة داخل كاش فلاتر بأكمله
+      - name: Deep Patch Firebase Messaging Header inside Cache
         run: |
           flutter pub get
-          # البحث عن ملف الحزمة المسبب للأزمة واستبدال استدعاء <Firebase/Firebase.h> بـ "Firebase.h" القياسي
-          TARGET_FILE="$HOME/.pub-cache/hosted/pub.dev/firebase_messaging-14.7.10/ios/Classes/FLTFirebaseMessagingPlugin.h"
-          if [ -f "$TARGET_FILE" ]; then
-            sed -i '' 's/#import <Firebase\/Firebase.h>/#import "Firebase.h"/g' "$TARGET_FILE"
-            echo "✅ Done patching FLTFirebaseMessagingPlugin.h"
-          else
-            echo "⚠️ File not found in cache, skipping patch"
-          fi
+          # هذا الأمر المتقدم يبحث عن الملف أينما كان مخزناً في السيرفر ويستبدل سطر المشكلة فوراً
+          find $HOME/.pub-cache -name "FLTFirebaseMessagingPlugin.h" -exec sed -i '' 's/#import <Firebase\/Firebase.h>/#import "Firebase.h"/g' {} +
+          echo "✅ Deep patching complete."
 
       # تنظيف بناء البودات لتقرأ التعديل الجديد للحزمة
       - name: Clean and Install Pods
