@@ -1,1 +1,6 @@
+#include? "Pods-Runner.debug.xcconfig"
 #include "Generated.xcconfig"
+
+// 🌟 إجبار المترجم على تفعيل خيار تخطي الرؤوس غير المعيارية
+CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES = YES
+DEFINES_MODULE = YES
