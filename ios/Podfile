@@ -1,13 +1,10 @@
-# 1️⃣ استدعاء سكربت إعدادات Flutter الأساسية (هذا هو السطر المفقود الذي حل المشكلة)
-path = File.expand_path(File.join('..', '..', 'flutter', 'packages', 'flutter_tools', 'bin', 'podhelper.rb'))
-if File.exists?(path)
-  require path
+# السطر القياسي والآمن لاستدعاء مساعد Flutter
+target_local_podfile_path = File.expand_path(File.join('..', '..', 'flutter', 'packages', 'flutter_tools', 'bin', 'podhelper.rb'))
+if File.exist?(target_local_podfile_path)
+  require target_local_podfile_path
 else
-  # مسار احتياطي لبيئات الـ CI والـ Runner
-  require File.expand_path(File.join(File.dirname(__FILE__), '..', '.flutter-plugins-dependencies')), false rescue nil
-  # استدعاء تلقائي افتراضي
-  flutter_root = File.expand_path(File.join('..', '..'))
-  require File.expand_path(File.join(flutter_root, 'packages', 'flutter_tools', 'bin', 'podhelper.rb')), false rescue nil
+  # الحل المتوافق سحابياً لبيئات الـ GitHub Actions
+  require_relative '../.flutter-plugins-dependencies' rescue nil
 end
 
 platform :ios, '13.0'
@@ -16,7 +13,6 @@ target 'Runner' do
   use_frameworks!
   use_modular_headers!
 
-  # تثبيت كافة حزم Flutter والـ Plugins
   flutter_install_all_ios_pods File.dirname(File.expand_path(__FILE__))
 end
 
@@ -24,7 +20,7 @@ post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
     
-    # الحل الحاسم لإجبار Xcode على قبول ترويسات Firebase
+    # 🌟 الحل الحاسم لإجبار Xcode على قبول ترويسات Firebase دون أخطاء معجمية
     target.build_configurations.each do |config|
       config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
     end
