@@ -1,10 +1,10 @@
+import 'dart:io'; // 🌟 تم إضافة هذه المكتبة للتحقق من نظام التشغيل بأمان
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // مكتبة مهمة لتمكين ميزة النسخ للحافظة
 import 'login_screen.dart';
 import 'services/notification_service.dart'; // استيراد خدمة الإشعارات والصوت
 // ignore: unused_import
 import 'services/socket_service.dart'; // استيراد محرك الربط اللحظي
-
 // مكاتب الفايربيز السحابية
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -14,32 +14,39 @@ void main() async {
   // التأكد من تهيئة أدوات فلاتر قبل تشغيل أي خدمة
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 1️⃣ تهيئة خدمات الفايربيز السحابية
-  await Firebase.initializeApp();
+  // 🌟 [تعديل الحماية للـ iOS]: تشغيل خدمات Firebase فقط إذا كان النظام أندرويد
+  if (Platform.isAndroid) {
+    // 1️⃣ تهيئة خدمات الفايربيز السحابية
+    await Firebase.initializeApp();
 
-  // 2️⃣ طلب الإذن الرسمي والمنبثق لظهور الإشعارات على شاشة الصيدلي
-  await FirebaseMessaging.instance.requestPermission(
-    alert: true,
-    badge: true,
-    sound: true,
-  );
+    // 2️⃣ طلب الإذن الرسمي والمنبثق لظهور الإشعارات على شاشة الصيدلي
+    await FirebaseMessaging.instance.requestPermission(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
 
-  // 💡 [التعديل المضاف هنا]: الاستماع لتغير الرمز تلقائياً في الخلفية وإرساله للسيرفر فوراً
-  FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
-    final pharmacyId = AuthService.currentPharmacy?['id'];
-    if (pharmacyId != null) {
-      int realId = int.tryParse(pharmacyId.toString()) ?? 0;
-      if (realId != 0) {
-        // استدعاء دالة الإرسال للسيرفر لتحديث قاعدة البيانات بالرمز الجديد
-        await NotificationService.registerDeviceToken(realId);
-        debugPrint(
-            "🔄 تم اكتشاف تغير الرمز وتحديثه تلقائياً في السيرفر: $newToken");
+    // 💡 [التعديل المضاف هنا]: الاستماع لتغير الرمز تلقائياً في الخلفية وإرساله للسيرفر فوراً
+    FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
+      final pharmacyId = AuthService.currentPharmacy?['id'];
+      if (pharmacyId != null) {
+        int realId = int.tryParse(pharmacyId.toString()) ?? 0;
+        if (realId != 0) {
+          // استدعاء دالة الإرسال للسيرفر لتحديث قاعدة البيانات بالرمز الجديد
+          await NotificationService.registerDeviceToken(realId);
+          debugPrint(
+              "🔄 تم اكتشاف تغير الرمز وتحديثه تلقائياً في السيرفر: $newToken");
+        }
       }
-    }
-  });
+    });
 
-  // تهيئة محرك الإشعارات والصوت عند إقلاع التطبيق
-  await NotificationService.init();
+    // تهيئة محرك الإشعارات والصوت عند إقلاع التطبيق
+    await NotificationService.init();
+  } else {
+    // في حال كان آيفون، يتم طباعة رسالة في الكونسول وتخطي التثبيت بسلام لحل خطأ البناء
+    debugPrint("ℹ️ Firebase Cloud Messaging is disabled on iOS platform.");
+  }
+
   runApp(const PharmacyMobileApp());
 }
 
@@ -48,10 +55,13 @@ class PharmacyMobileApp extends StatelessWidget {
 
   // ✨ دالة سحرية لعرض الرمز على الشاشة بمجرد فتح التطبيق ودخول شاشة اللوجن
   void _showTokenDialog(BuildContext context) async {
+    // 🌟 [تعديل الحماية للـ iOS]: نمنع جلب الرمز إذا كان النظام ليس أندرويد لحماية التطبيق من الانهيار
+    if (!Platform.isAndroid) return;
+
     try {
       String? token = await FirebaseMessaging.instance.getToken();
       if (token != null && token.isNotEmpty) {
-        // ننتظر ثانية واحدة حتى تكتمل واجهة الشاشة تماماً ثم نظهر النافذة
+        // nنتظر ثانية واحدة حتى تكتمل واجهة الشاشة تماماً ثم نظهر النافذة
         Future.delayed(const Duration(seconds: 1), () {
           if (!context.mounted) return;
           showDialog(
