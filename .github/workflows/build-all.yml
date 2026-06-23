@@ -21,7 +21,7 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-          flutter-version: '3.22.2'
+          flutter-version: '3.27.0' # 🌟 تحديث الإصدار هنا ليتوافق مع الأدوات الحديثة
 
       - name: Build Android APK
         run: |
@@ -44,14 +44,11 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-          flutter-version: '3.22.2'
+          flutter-version: '3.27.0' # 🌟 تحديث الإصدار هنا أيضاً ليتطابق مع الأندرويد
 
       - name: Build iOS Application
         run: |
-          # 1️⃣ تحديث الحزم وحل تعارضات الإصدارات غير المتوافقة تلقائياً سحابياً
           flutter pub get
-          
-          # 2️⃣ 🌟 التعديل الحاسم: العودة لوضع الـ debug المتوافق إجبارياً مع الـ simulator لمنع خطأ خروج العملية
           flutter build ios --simulator --no-codesign --debug
 
       - name: Upload iOS App
