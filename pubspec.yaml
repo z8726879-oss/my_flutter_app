@@ -15,15 +15,14 @@ dependencies:
   # حزمة السوكيت المستقرة الخاصة بك
   socket_io_client: ^3.1.6
   cupertino_icons: ^1.0.8
-  
-  # 🌟 تم إبقاء الإصدارات المستقرة المتوافقة مع كود الإشعارات والصوت الخاص بك
-  audioplayers: 5.2.1
-  flutter_local_notifications: 16.1.0
 
-  # 🌟 التعديل الحاسم: جعل الفايربيز يعمل للأندرويد فقط وتجنب تحميله للـ iOS سحابياً
-  # طالما أن الحزم تم تعريفها للـ Android لن يراها مترجم Xcode في السحابة
+  # حزم الفايربيز المستقرة المتوافقة مع كود الإشعارات والصوت الخاص بك
   firebase_core: 2.32.0
   firebase_messaging: 14.7.10
+
+  # النسخ القديمة المستقرة لتشغيل الأصوات والإشعارات المحلية
+  audioplayers: 5.2.1
+  flutter_local_notifications: 16.1.0
 
 dev_dependencies:
   flutter_test:
@@ -32,7 +31,7 @@ dev_dependencies:
   flutter_launcher_icons: ^0.14.4
   flutterfire_cli: ^1.4.0
 
-# إعدادات الأيقونة
+# إعدادات الأيقونة الخاصة بالتطبيق
 flutter_launcher_icons:
   android: true
   ios: true
