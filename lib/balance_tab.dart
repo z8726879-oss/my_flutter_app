@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
+import 'package:intl/intl.dart'; // 🌟 السطر الحاسم لتشغيل الكلاس بنجاح
 
 class PharmacyBalanceTab extends StatefulWidget {
   const PharmacyBalanceTab({super.key});
@@ -197,9 +198,13 @@ class _PharmacyBalanceTabState extends State<PharmacyBalanceTab> {
           ),
           const SizedBox(height: 4),
           Text(
-            "${remainingBalance.toStringAsFixed(1)} ل.س",
+            // 🌟 تنسيق الرصيد المتبقي بالفواصل والرموز
+            "\u200F${NumberFormat('#,##0.0', 'en_US').format(remainingBalance)} ل.س",
             style: const TextStyle(
-                fontSize: 26, fontWeight: FontWeight.bold, color: Colors.white),
+                fontSize: 26,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+                fontFamily: 'Cairo'),
           ),
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 14.0),
@@ -208,11 +213,17 @@ class _PharmacyBalanceTabState extends State<PharmacyBalanceTab> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
+              // 🌟 إرسال الرقم المنسق جاهزاً كـ String للدالة المساعدة
               _buildStatDetail(
-                  "المقبوض نقداً", totalPaidAmount, const Color(0xFF10B981)),
+                  "المقبوض نقداً",
+                  "\u200F${NumberFormat('#,##0.0', 'en_US').format(totalPaidAmount)} ل.س",
+                  const Color(0xFF10B981)),
               Container(width: 1, height: 30, color: Colors.white24),
+              // 🌟 إرسال الرقم المنسق جاهزاً كـ String للدالة المساعدة
               _buildStatDetail(
-                  "إجمالي الطلبيات", totalOrdersAmount, Colors.white),
+                  "إجمالي الطلبيات",
+                  "\u200F${NumberFormat('#,##0.0', 'en_US').format(totalOrdersAmount)} ل.س",
+                  Colors.white),
             ],
           )
         ],
@@ -220,16 +231,21 @@ class _PharmacyBalanceTabState extends State<PharmacyBalanceTab> {
     );
   }
 
-  Widget _buildStatDetail(String title, double value, Color valueColor) {
+// 🌟 تم تعديل المتغير الثاني هنا ليكون String بدلاً من double لكي يقبل النص المنسق بالفواصل
+  Widget _buildStatDetail(
+      String title, String formattedValue, Color valueColor) {
     return Column(
       children: [
         Text(title,
             style: const TextStyle(
                 fontFamily: 'Cairo', color: Colors.white70, fontSize: 12)),
         const SizedBox(height: 2),
-        Text("${value.toStringAsFixed(1)} ل.س",
+        Text(formattedValue,
             style: TextStyle(
-                fontSize: 14, fontWeight: FontWeight.bold, color: valueColor)),
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: valueColor,
+                fontFamily: 'Cairo')),
       ],
     );
   }
@@ -238,12 +254,16 @@ class _PharmacyBalanceTabState extends State<PharmacyBalanceTab> {
     if (financialLog.isEmpty) {
       return const Center(
         child: Padding(
+          // 🌟 التصحيح هنا: استبدال الكلمة المكررة بـ EdgeInsets.only
           padding: EdgeInsets.only(top: 50.0),
-          child: Text("لا توجد سجلات مالية حتى الآن",
-              style: TextStyle(fontFamily: 'Cairo', color: Colors.grey)),
+          child: Text(
+            "لا توجد سجلات مالية حتى الآن",
+            style: TextStyle(fontFamily: 'Cairo', color: Colors.grey),
+          ),
         ),
       );
     }
+
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -251,6 +271,12 @@ class _PharmacyBalanceTabState extends State<PharmacyBalanceTab> {
       itemBuilder: (context, index) {
         final log = financialLog[index];
         final bool isOrder = log["is_plus"];
+
+        // 🌟 تحويل قيمة العملية المالية الحالية وتهيئتها بالفواصل بدقة
+        final double amountValue =
+            double.tryParse(log["amount"].toString()) ?? 0.0;
+        final String formattedAmount =
+            NumberFormat('#,##0.0', 'en_US').format(amountValue);
 
         return Container(
           margin: const EdgeInsets.only(bottom: 10),
@@ -262,13 +288,15 @@ class _PharmacyBalanceTabState extends State<PharmacyBalanceTab> {
           ),
           child: Row(
             children: [
-              // القيمة المالية
+              // القيمة المالية المنسقة داخل السجل لمنع الانعكاس
               Text(
-                "${isOrder ? '+' : '-'}${log["amount"].toStringAsFixed(1)} ل.س",
+                // 🌟 عرض الإشارة والرقم بالفواصل ثم العملة دون تداخل
+                "\u200F${isOrder ? '+' : '-'}$formattedAmount ل.س",
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
                   color: isOrder ? Colors.redAccent : const Color(0xFF10B981),
+                  fontFamily: 'Cairo',
                 ),
               ),
               const Spacer(),
@@ -293,12 +321,10 @@ class _PharmacyBalanceTabState extends State<PharmacyBalanceTab> {
               // الأيقونة
               CircleAvatar(
                 radius: 18,
-                // ignore: deprecated_member_use
                 backgroundColor: isOrder
-                    // ignore: deprecated_member_use
-                    ? Colors.redAccent.withOpacity(0.08)
-                    // ignore: deprecated_member_use
-                    : const Color(0xFF10B981).withOpacity(0.08),
+                    ? Colors.redAccent.withAlpha(
+                        20) // 🌟 استخدام build المستقر بدلاً من الفانكشن المهجورة
+                    : const Color(0xFF10B981).withAlpha(20),
                 child: Icon(
                   isOrder
                       ? Icons.arrow_upward_rounded
