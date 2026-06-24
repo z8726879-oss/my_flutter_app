@@ -24,8 +24,10 @@ jobs:
           channel: 'stable'
           flutter-version: '3.27.0'
 
+      # 🌟 تم دمج أمر الترقية والتنظيف هنا لحل مشكلة تعارض الجافا وخطأ bigLargeIcon
       - name: Build Android APK
         run: |
+          flutter pub upgrade
           flutter pub get
           flutter build apk --debug --android-skip-build-dependency-validation
 
@@ -47,11 +49,10 @@ jobs:
           channel: 'stable'
           flutter-version: '3.27.0'
 
-      # 🌟 التعديل الخارق: البحث الشامل والتعديل الإجباري لملف الترويسة داخل كاش فلاتر بأكمله
+      # 🌟 البحث الشامل والتعديل الإجباري لملف الترويسة داخل كاش فلاتر بأكمله
       - name: Deep Patch Firebase Messaging Header inside Cache
         run: |
           flutter pub get
-          # هذا الأمر المتقدم يبحث عن الملف أينما كان مخزناً في السيرفر ويستبدل سطر المشكلة فوراً
           find $HOME/.pub-cache -name "FLTFirebaseMessagingPlugin.h" -exec sed -i '' 's/#import <Firebase\/Firebase.h>/#import "Firebase.h"/g' {} +
           echo "✅ Deep patching complete."
 
