@@ -132,114 +132,273 @@ class _CartScreenState extends State<CartScreen> {
   Widget _buildCartCard(dynamic item, int index) {
     return Card(
       elevation: 0,
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 12, left: 16, right: 16),
       color: Colors.white,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(15),
         side: const BorderSide(color: Color(0xFFE2E8F0), width: 1),
       ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        child: Row(
-          textDirection:
-              TextDirection.rtl, // لضمان الترتيب الصحيح من اليمين لليسار
-          children: [
-            // 1. أيقونة الدواء اليمنى
-            CircleAvatar(
-              // ignore: deprecated_member_use
-              backgroundColor: const Color(0xFF007A87).withOpacity(0.08),
-              child: const Icon(Icons.medication_rounded,
-                  color: Color(0xFF007A87)),
-            ),
-            const SizedBox(width: 12),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(15),
+        // عند الضغط على الكرت بأكمله أو على زر الكمية تفتح نافذة التحكم
+        onTap: () => _showQuantityDialog(item, index),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Column(
+            children: [
+              // السطر الأول: اسم الدواء وزر الكمية (المنبثق)
+              Row(
+                textDirection: TextDirection.rtl,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // اسم الدواء
+                  Expanded(
+                    child: Text(
+                      item.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'Cairo',
+                        fontSize: 16,
+                        color: Color(0xFF1A202C),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  // أيقونة الكمية التي تشبه تصميم الفاتورة وتفتح المنبثقة عند الضغط
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      // ignore: deprecated_member_use
+                      color: const Color(0xFF007A87).withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      "الكمية: x${item.quantity}",
+                      style: const TextStyle(
+                        fontFamily: 'Cairo',
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF007A87),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 8.0),
+                child: Divider(color: Color(0xFFEDF2F7), height: 1),
+              ),
+              // السطر الثاني: تفاصيل السعر والعروض
+              Row(
+                textDirection: TextDirection.rtl,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // السعر الإجمالي للبند
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        "إجمالي البند",
+                        style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey,
+                            fontFamily: 'Cairo'),
+                      ),
+                      Text(
+                        "${(item.price ?? 0) * item.quantity} ل.س",
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF007A87),
+                          fontFamily: 'Cairo',
+                        ),
+                      ),
+                    ],
+                  ),
+                  // سعر العلبة المفردة
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      const Text(
+                        "سعر العلبة",
+                        style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey,
+                            fontFamily: 'Cairo'),
+                      ),
+                      Text(
+                        "${item.price ?? 0} ل.س",
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFF4A5568),
+                          fontFamily: 'Cairo',
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
-            // 2. قسم النصوص المرن (يمنع تداخل الكلمات أفقياً وعمودياً)
-            Expanded(
+  void _showQuantityDialog(dynamic item, int index) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+      ),
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setModalState) {
+            return Padding(
+              padding: const EdgeInsets.all(20.0),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  // تم إصلاح الخطأ القواعدي هنا (إزالة القوس الزائد وضبط خصائص الـ Container)
+                  Container(
+                    width: 40,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 20),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  // اسم المنتج في النافذة
                   Text(
                     item.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
                     style: const TextStyle(
-                      fontWeight: FontWeight.bold,
                       fontFamily: 'Cairo',
-                      fontSize: 14,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
                       color: Color(0xFF1A202C),
                     ),
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: 8),
                   Text(
-                    "السعر: ${item.price ?? 0} ل.س",
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey,
-                      fontFamily: 'Cairo',
-                    ),
-                  ),
-                  if (item.offer != null &&
-                      item.offer.isNotEmpty &&
-                      item.offer != "لا يوجد عرض") ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      "العرض المرفق: ${item.offer}",
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: Colors.orange,
-                        fontWeight: FontWeight.bold,
+                    "تعديل كمية الدواء في السلة",
+                    style: TextStyle(
                         fontFamily: 'Cairo',
+                        fontSize: 13,
+                        color: Colors.grey[500]),
+                  ),
+                  const SizedBox(height: 30),
+
+                  // أزرار التحكم الكبيرة
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    textDirection: TextDirection.rtl,
+                    children: [
+                      // زر زائد كبير
+                      InkWell(
+                        onTap: () {
+                          changeQty(index, 1);
+                          setModalState(() {});
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            // ignore: deprecated_member_use
+                            color: const Color(0xFF007A87).withOpacity(0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.add_rounded,
+                              color: Color(0xFF007A87), size: 32),
+                        ),
+                      ),
+
+                      // عرض الكمية الكبيرة
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 30),
+                        child: Text(
+                          "${item.quantity}",
+                          style: const TextStyle(
+                            fontFamily: 'Cairo',
+                            fontSize: 32,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF1A202C),
+                          ),
+                        ),
+                      ),
+
+                      // زر ناقص كبير
+                      // 1. زر ناقص كبير المصلح بطريقة برمجية مرنة تمنع أخطاء الـ const
+                      InkWell(
+                        onTap: () {
+                          if (item.quantity > 1) {
+                            changeQty(index, -1);
+                            setModalState(() {});
+                          }
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: const BoxDecoration(
+                            color: Color(
+                                0xFFF1F5F9), // استخدام كود اللون الثابت مباشرة لحل مشكلة السطر 344
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.remove_rounded,
+                            // استخدمنا كود اللون مباشرة بصيغة هكس (Hex) ليتوافق مع الـ const الأب تماماً وينتهي الخط الأحمر
+                            color: item.quantity > 1
+                                ? const Color(0xFF2D3748)
+                                : const Color(0xFFCBD5E1),
+                            size: 32,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 35),
+
+                  // زر الحذف النهائي الأحمر في الأسفل
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFFFF5F5),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          side: const BorderSide(color: Color(0xFFFEB2B2)),
+                        ),
+                      ),
+                      onPressed: () {
+                        Navigator.pop(context);
+                        removeItem(item.drugId);
+                      },
+                      icon: const Icon(Icons.delete_outline_rounded,
+                          color: Colors.redAccent),
+                      label: const Text(
+                        "حذف الدواء من السلة",
+                        style: TextStyle(
+                          fontFamily: 'Cairo',
+                          fontWeight: FontWeight.bold,
+                          color: Colors.redAccent,
+                          fontSize: 15,
+                        ),
                       ),
                     ),
-                  ],
+                  ),
+                  const SizedBox(height: 15),
                 ],
               ),
-            ),
-
-            // 3. قسم أزرار التحكم والعداد (يسار الكرت)
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              textDirection: TextDirection.ltr,
-              children: [
-                IconButton(
-                  constraints: const BoxConstraints(),
-                  padding: const EdgeInsets.all(4),
-                  icon: const Icon(Icons.remove_circle_outline,
-                      color: Colors.grey, size: 22),
-                  onPressed: () => changeQty(index, -1),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 6),
-                  child: Text(
-                    "${item.quantity}",
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontFamily: 'Cairo',
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
-                IconButton(
-                  constraints: const BoxConstraints(),
-                  padding: const EdgeInsets.all(4),
-                  icon: const Icon(Icons.add_circle_outline,
-                      color: Color(0xFF007A87), size: 22),
-                  onPressed: () => changeQty(index, 1),
-                ),
-                const SizedBox(width: 6),
-                IconButton(
-                  constraints: const BoxConstraints(),
-                  padding: const EdgeInsets.all(4),
-                  icon: const Icon(Icons.delete_outline_rounded,
-                      color: Colors.redAccent, size: 22),
-                  onPressed: () => removeItem(item.drugId),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
+            );
+          },
+        );
+      },
     );
   }
 
