@@ -28,7 +28,7 @@ class _PharmacyBalanceTabState extends State<PharmacyBalanceTab> {
   }
 
   // ==============================================================================
-  // [النسخة المحصنة والمقاومة للحذف] جلب البيانات المالية الحقيقية من السيرفر
+  // [النسخة النهائية المفروزة والمحمية] جلب البيانات المالية الشخصية للصيدلي
   // ==============================================================================
   Future<void> fetchFinancialData() async {
     try {
@@ -40,12 +40,12 @@ class _PharmacyBalanceTabState extends State<PharmacyBalanceTab> {
       if (pharmacyId == null)
         throw Exception("لم يتم العثور على بيانات الصيدلية");
 
-      // 2. جلب الطلبات، المدفوعات، والإحصائيات الحية بالتوازي لضمان سرعة صاروخية
+      // 2. جلب الطلبات، المدفوعات، والإحصائيات المفروزة بالتوازي لسرعة صاروخية
       final results = await Future.wait([
         ApiService.getRequestsByPharmacy(pharmacyId),
         ApiService.getPayments(pharmacyId: pharmacyId),
-        ApiService.getStatistics(
-            'هذا العام'), // 👈 جلب مؤشرات السيرفر الرسمية المحمية
+        // 💡 التعديل الحاسم: إجبار السيرفر على فرز ديون هذا الصيدلي فقط عبر الرابط
+        ApiService.getStatistics('هذا العام?pharmacy_id=$pharmacyId'),
       ]);
 
       final List requests = results[0] as List;
@@ -56,7 +56,7 @@ class _PharmacyBalanceTabState extends State<PharmacyBalanceTab> {
       double paidSum = 0;
       List<Map<String, dynamic>> combinedLog = [];
 
-      // معالجة الفواتير الحية الحالية المتبقية في السيرفر (لبناء سجل السطور فقط)
+      // بناء سجل السطور للفواتير الحية الحالية المتبقية في السيرفر
       for (var req in requests) {
         if (req['status'] != 'مرفوضة') {
           double val = double.tryParse(req['total_price'].toString()) ?? 0;
@@ -82,11 +82,10 @@ class _PharmacyBalanceTabState extends State<PharmacyBalanceTab> {
         });
       }
 
-      // ترتيب كشف الحساب من الأحدث للأقدم بناءً على التاريخ
+      // ترتيب كشف الحساب من الأحدث للأقدم
       combinedLog.sort((a, b) => b['date'].compareTo(a['date']));
 
-      // 💡 الحصن الحسابي: قراءة الرصيد والديون والمبيعات التراكمية من الحقول الثابتة بالسيرفر مباشرة
-      // هذا التعديل يضمن ثبات وصحة الأرقام حتى لو قمت بحذف ملايين السجلات القديمة لتفريغ الهارد
+      // قراءة الديون والمبيعات التراكمية المفروزة لهذا الصيدلي من السيرفر مباشرة
       double secureDebts =
           double.tryParse(stats['kpis']?['totalDebts']?.toString() ?? '0') ?? 0;
       double secureSales =
@@ -94,11 +93,10 @@ class _PharmacyBalanceTabState extends State<PharmacyBalanceTab> {
 
       if (mounted) {
         setState(() {
-          // إذا كانت المبيعات التاريخية بالسيرفر أعلى (بسبب الحذف) نأخذها، وإلا نعتمد المجموع الحالي
           totalOrdersAmount = secureSales > ordersSum ? secureSales : ordersSum;
           totalPaidAmount = paidSum;
           remainingBalance =
-              secureDebts; // 👈 الديون المعلقة تقرأ القيمة المفلترة الصحيحة من السيرفر
+              secureDebts; // 👈 الآن سيعرض ديون هذا الصيدلي فقط بدقة
           financialLog = combinedLog;
           isLoading = false;
         });
