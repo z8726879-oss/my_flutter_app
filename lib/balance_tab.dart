@@ -27,9 +27,9 @@ class _PharmacyBalanceTabState extends State<PharmacyBalanceTab> {
     fetchFinancialData();
   }
 
-  // ==========================================
-  // جلب البيانات المالية الحقيقية من السيرفر
-  // ==========================================
+  // ==============================================================================
+  // [النسخة المحصنة والمقاومة للحذف] جلب البيانات المالية الحقيقية من السيرفر
+  // ==============================================================================
   Future<void> fetchFinancialData() async {
     try {
       if (!mounted) return;
@@ -38,23 +38,25 @@ class _PharmacyBalanceTabState extends State<PharmacyBalanceTab> {
       // 1. جلب معرف الصيدلية الحالية من AuthService
       final pharmacyId = AuthService.currentPharmacy?['id'];
       if (pharmacyId == null)
-        // ignore: curly_braces_in_flow_control_structures
         throw Exception("لم يتم العثور على بيانات الصيدلية");
 
-      // 2. جلب الطلبات والمدفوعات بالتوازي لضمان سرعة الاستجابة
+      // 2. جلب الطلبات، المدفوعات، والإحصائيات الحية بالتوازي لضمان سرعة صاروخية
       final results = await Future.wait([
         ApiService.getRequestsByPharmacy(pharmacyId),
         ApiService.getPayments(pharmacyId: pharmacyId),
+        ApiService.getStatistics(
+            'هذا العام'), // 👈 جلب مؤشرات السيرفر الرسمية المحمية
       ]);
 
-      final List requests = results[0];
-      final List payments = results[1];
+      final List requests = results[0] as List;
+      final List payments = results[1] as List;
+      final Map<String, dynamic> stats = results[2] as Map<String, dynamic>;
 
       double ordersSum = 0;
       double paidSum = 0;
       List<Map<String, dynamic>> combinedLog = [];
 
-      // معالجة الفواتير (تزيد الدين)
+      // معالجة الفواتير الحية الحالية المتبقية في السيرفر (لبناء سجل السطور فقط)
       for (var req in requests) {
         if (req['status'] != 'مرفوضة') {
           double val = double.tryParse(req['total_price'].toString()) ?? 0;
@@ -63,12 +65,12 @@ class _PharmacyBalanceTabState extends State<PharmacyBalanceTab> {
             "title": "فاتورة طلبية #${req['id']}",
             "date": req['created_at'].toString().substring(0, 10),
             "amount": val,
-            "is_plus": true, // تزيد الدين (+)
+            "is_plus": true,
           });
         }
       }
 
-      // معالجة المقبوضات النقدية (تنقص الدين)
+      // معالجة المقبوضات النقدية المخزنة
       for (var pay in payments) {
         double val = double.tryParse(pay['amount'].toString()) ?? 0;
         paidSum += val;
@@ -76,24 +78,33 @@ class _PharmacyBalanceTabState extends State<PharmacyBalanceTab> {
           "title": pay['notes'] ?? "دفعة نقدية للموزع",
           "date": pay['created_at'].toString().substring(0, 10),
           "amount": val,
-          "is_plus": false, // تنقص الدين (-)
+          "is_plus": false,
         });
       }
 
-      // ترتيب السجل من الأحدث للأقدم بناءً على التاريخ
+      // ترتيب كشف الحساب من الأحدث للأقدم بناءً على التاريخ
       combinedLog.sort((a, b) => b['date'].compareTo(a['date']));
+
+      // 💡 الحصن الحسابي: قراءة الرصيد والديون والمبيعات التراكمية من الحقول الثابتة بالسيرفر مباشرة
+      // هذا التعديل يضمن ثبات وصحة الأرقام حتى لو قمت بحذف ملايين السجلات القديمة لتفريغ الهارد
+      double secureDebts =
+          double.tryParse(stats['kpis']?['totalDebts']?.toString() ?? '0') ?? 0;
+      double secureSales =
+          double.tryParse(stats['kpis']?['totalSales']?.toString() ?? '0') ?? 0;
 
       if (mounted) {
         setState(() {
-          totalOrdersAmount = ordersSum;
+          // إذا كانت المبيعات التاريخية بالسيرفر أعلى (بسبب الحذف) نأخذها، وإلا نعتمد المجموع الحالي
+          totalOrdersAmount = secureSales > ordersSum ? secureSales : ordersSum;
           totalPaidAmount = paidSum;
-          remainingBalance = ordersSum - paidSum;
+          remainingBalance =
+              secureDebts; // 👈 الديون المعلقة تقرأ القيمة المفلترة الصحيحة من السيرفر
           financialLog = combinedLog;
           isLoading = false;
         });
       }
     } catch (e) {
-      debugPrint("🛑 خطأ مالي: $e");
+      debugPrint("🛑 خطأ مالي حرج بالواجهات: $e");
       if (mounted) setState(() => isLoading = false);
     }
   }
