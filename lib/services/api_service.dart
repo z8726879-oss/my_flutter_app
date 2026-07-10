@@ -151,11 +151,22 @@ class ApiService {
   // 3. المالية والإحصائيات (Finance & Stats)
   // =============================================================
 
-  static Future<Map<String, dynamic>> getStatistics(String period) async {
+  // ==============================================================================
+  // [النسخة المفرزة والمحمية كلياً] جلب الإحصائيات والديون بدعم رقم الصيدلي
+  // ==============================================================================
+  static Future<Map<String, dynamic>> getStatistics(String period,
+      {int? pharmacyId}) async {
     try {
+      // 💡 بناء الرابط بشكل ديناميكي: إذا وجد pharmacyId يتم دمجه فوراً لفرز حساب الصيدلي
+      String url = "$baseUrl/statistics?period=$period";
+      if (pharmacyId != null) {
+        url += "&pharmacy_id=$pharmacyId";
+      }
+
       final response = await http.get(
-          Uri.parse("$baseUrl/statistics?period=$period"),
-          headers: _headers);
+        Uri.parse(url),
+        headers: _headers,
+      );
       return response.statusCode == 200 ? jsonDecode(response.body) : {};
     } catch (e) {
       return {};

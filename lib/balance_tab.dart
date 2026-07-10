@@ -38,14 +38,16 @@ class _PharmacyBalanceTabState extends State<PharmacyBalanceTab> {
       // 1. جلب معرف الصيدلية الحالية من AuthService
       final pharmacyId = AuthService.currentPharmacy?['id'];
       if (pharmacyId == null)
+        // ignore: curly_braces_in_flow_control_structures
         throw Exception("لم يتم العثور على بيانات الصيدلية");
 
+      // 2. جلب الطلبات، المدفوعات، والإحصائيات المفروزة بالتوازي لسرعة صاروخية
       // 2. جلب الطلبات، المدفوعات، والإحصائيات المفروزة بالتوازي لسرعة صاروخية
       final results = await Future.wait([
         ApiService.getRequestsByPharmacy(pharmacyId),
         ApiService.getPayments(pharmacyId: pharmacyId),
-        // 💡 التعديل الحاسم: إجبار السيرفر على فرز ديون هذا الصيدلي فقط عبر الرابط
-        ApiService.getStatistics('هذا العام?pharmacy_id=$pharmacyId'),
+        // 💡 الطريقة الصحيحة: تمرير المتغير كمعامل منفصل ومحمي كما عدلنا في الـ ApiService
+        ApiService.getStatistics('هذا العام', pharmacyId: pharmacyId),
       ]);
 
       final List requests = results[0] as List;
