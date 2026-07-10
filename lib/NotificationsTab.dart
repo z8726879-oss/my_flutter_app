@@ -25,9 +25,9 @@ class _PharmacyNotificationsTabState extends State<PharmacyNotificationsTab> {
     setupSocketListener(); // 2. ربط السوكيت الفوري
   }
 
-  // ========================================================
-  // 1. منطق التخزين المطور: الدمج بين السيرفر والـ Local Storage
-  // ========================================================
+  // ==============================================================================
+  // [النسخة المحصنة والمزامنة تماماً] الدمج وتصفير الكاش التلقائي مع السيرفر
+  // ==============================================================================
   Future<void> _loadStoredNotifications() async {
     final prefs = await SharedPreferences.getInstance();
 
@@ -40,30 +40,29 @@ class _PharmacyNotificationsTabState extends State<PharmacyNotificationsTab> {
       });
     }
 
-    // ب. ثانياً: نقوم بجلب التحديثات الجديدة من قاعدة بيانات السيرفر لضمان مزامنة الإشعارات المستلمة أثناء غلق التطبيق
+    // ب. ثانياً: المزامنة الصارمة والتحديث من قاعدة بيانات السيرفر
     final pharmacyId = AuthService.currentPharmacy?['id'];
     if (pharmacyId != null) {
       try {
-        // استدعاء دالة الـ API التي أضفناها لـ NotificationService
         final List<dynamic> serverNotifications =
             await NotificationService.fetchSavedNotifications(pharmacyId);
 
-        if (serverNotifications.isNotEmpty && mounted) {
+        // 💡 التعديل الجوهري والأخير: تمت إزالة شرط الاستثناء لضمان مسح وتصفير كاش الهاتف
+        // فور قيام السيرفر بتنظيف الإشعارات القديمة فجراً لتتطابق الواجهات تماماً
+        if (mounted) {
           setState(() {
-            // تحويل البيانات القادمة من الباكيند وصياغتها لتتطابق مع تصميم تطبيقك
             notifications = serverNotifications.map((item) {
               return {
                 "title": item['title'] ?? "تنبيه جديد 🔔",
                 "body": item['message'] ?? "",
                 "time": "الآن",
-                "is_read":
-                    true // الإشعارات القادمة من السيرفر تعتبر مقروءة مسبقاً في صندوق الوارد
+                "is_read": true
               };
             }).toList();
             isLoading = false;
           });
 
-          // تحديث الكاش الداخلي للهاتف بالبيانات الجديدة القادمة من السيرفر
+          // تحديث وتطهير الكاش الداخلي للهاتف فوراً بالبيانات الحية المتبقية بالسيرفر فقط
           _saveNotificationsToStorage();
         }
       } catch (e) {
