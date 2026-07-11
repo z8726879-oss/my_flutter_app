@@ -82,23 +82,30 @@ class _PharmacyNotificationsTabState extends State<PharmacyNotificationsTab> {
     await prefs.setString('saved_notifications', encodedData);
   }
 
-  // ==========================================
-  // 2. الربط اللحظي المطور (Socket.io)
-  // ==========================================
+  // ==============================================================================
+  // 2. الربط اللحظي المطور المعزول سيبرانياً (Secure Socket.io Listener)
+  // ==============================================================================
   void setupSocketListener() {
     final pharmacyId = AuthService.currentPharmacy?['id'];
-    if (pharmacyId == null) return;
 
-    SocketService.connect(pharmacyId.toString());
+    // 💡 الحصن القياسي: جلب التوكن الرقمي الموثق للصيدلي بدلاً من الـ ID النصي القديم
+    // (تأكد من مطابقة مسمى المتغير token أو currentAdminToken حسب المتاح بملف الحماية بجوالك)
+    final String? userToken = AuthService.token;
 
-    SocketService.socket.on("notification_$pharmacyId", (data) {
+    if (pharmacyId == null || userToken == null) return;
+
+    // استدعاء دالة الاتصال القياسية المحدثة وحقن معالج الاستقبال بداخلها مباشرة
+    SocketService.connect(userToken, (data) {
       if (mounted) {
         setState(() {
+          // دفع الإشعار اللحظي القفّاز فوراً إلى أعلى القائمة أمام الصيدلي
           _pushNewNotification(
             title: data['title'] ?? "تنبيه جديد 🔔",
             message: data['message'] ?? "",
           );
         });
+
+        // إطلاق لافتة التنبيه المنبثقة العلوية بداخل التطبيق
         NotificationService.showNotification(
           context,
           message: data['message'] ?? "لديك إشعار جديد",

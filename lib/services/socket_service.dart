@@ -1,4 +1,5 @@
-// ignore: library_prefixes
+// ignore_for_file: library_prefixes
+import 'package:flutter/material.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 
 class SocketService {
@@ -11,31 +12,35 @@ class SocketService {
     return _socket!;
   }
 
-  static void connect(String pharmacyId) {
+  // 💡 التعديل الجوهري: استقبال التوكن الرقمي للصيدلي لتجاوز حارس أمان السيرفر الجديد
+  static void connect(
+      String userToken, Function(dynamic) onNotificationReceived) {
     if (_socket != null && _socket!.connected) return;
 
     _socket = IO.io(
-      "http://192.168.43.68:5000/api",
+      "http://192.168.43.68:5000", // 💡 تم حذف /api لنجاح المزامنة مع السيرفر القياسي
       IO.OptionBuilder()
           .setTransports(['websocket'])
           .enableAutoConnect()
+          // 💡 الحصن القياسي: حقن التوكن الرقمي لتأمين وتوثيق هوية هاتف الصيدلي تلقائياً
+          .setAuth({'token': 'Bearer $userToken'})
           .build(),
     );
 
     _socket!.onConnect((_) {
-      // ignore: avoid_print
-      print("✅ تم الاتصال بنظام البث اللحظي بنجاح للشركة والصيدلية");
+      debugPrint("✅ تم الاتصال الموثق بنظام البث اللحظي للجوال الصيدلية بنجاح");
     });
 
-    _socket!.on("notification_$pharmacyId", (data) {
-      // ignore: avoid_print
-      print("🔔 إشعار جديد مستلم في الخلفية: ${data['message']}");
+    _socket!.onDisconnect((_) {
+      debugPrint("❌ انقطع الاتصال بالسيرفر السحابي للمستودع");
     });
 
-    // ignore: avoid_print
-    _socket!.onDisconnect((_) => print("❌ انقطع الاتصال بالسيرفر"));
-    // ignore: avoid_print
-    _socket!.onError((err) => print("⚠️ خطأ في السوكيت: $err"));
+    _socket!.onConnectError((err) {
+      debugPrint("🛑 فشل توثيق اتصال الجوال بالسوكيت: $err");
+    });
+
+    // 💡 الاستماع لحدث الإشعارات القياسي المفرز داخل الغرفة المحمية للصيدلي عمر
+    _socket!.on("notification", (data) => onNotificationReceived(data));
   }
 
   static void disconnect() {

@@ -51,11 +51,19 @@ class _LoginScreenState extends State<LoginScreen> {
         password: passwordController.text.trim(),
       );
 
-      // ✨ الحل السحري: جلب معرّف الصيدلية التي سجلت دخولها فوراً وتشغيل السوكيت عالمياً
+      // 💡 الحل السحري السيبراني: جلب توكن الصيدلية الحالي وتفعيل السوكيت المفرز فوراً
+      final String? userToken = AuthService
+          .token; // أو AuthService.currentToken حسب المسمى بملف الحماية بجوالك
       final pharmacyId = AuthService.currentPharmacy?['id'];
-      if (pharmacyId != null) {
-        SocketService.connect(pharmacyId.toString());
 
+      if (userToken != null && pharmacyId != null) {
+        // تمرير التوكن الرقمي وجسم دالة الاستقبال بشكل متوافق ومحمي مع السيرفر القياسي
+        SocketService.connect(userToken, (notificationData) {
+          // هنا يمكنك استدعاء دالة تحديث قائمة الإشعارات فوراً عند استلام بث لحظي
+          debugPrint("🔔 إشعار لحظي جديد قادم من السوكيت: $notificationData");
+        });
+
+        // دالة تنشيط الإشعارات المنبثقة من جوجل فايربيز (Firebase FCM)
         int realId = (pharmacyId is int)
             ? pharmacyId
             : (int.tryParse(pharmacyId.toString()) ?? 0);
