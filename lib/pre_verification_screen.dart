@@ -3,6 +3,7 @@ import 'dart:convert'; // مكتبة لتفكيك بيانات الـ JSON ال�
 import 'package:http/http.dart'
     as http; // استدعاء مباشر ومستقل لحل مشكلة الـ ApiService
 import 'register_screen.dart';
+import 'services/auth_service.dart'; // استدعاء مباشر ومستقل لحل مشكلة الـ ApiService
 
 class PreVerificationScreen extends StatefulWidget {
   // ignore: use_super_parameters
@@ -28,12 +29,15 @@ class _PreVerificationScreenState extends State<PreVerificationScreen> {
   // دالة جلب الرمز المستقلة تماماً لحل مشكلة الخطأ الأحمر
   Future<void> _fetchCurrentCode() async {
     try {
-      // ملاحظة: إذا كنت تختبر الجوال على هاتف حقيقي والسيرفر على الكمبيوتر،
-      // استبدل localhost برقم الآيبي (IP) الفعلي للكمبيوتر (مثال: 192.168.1.5)
       final url =
           Uri.parse('http://192.168.43.68:5000/api/auth/registration-code');
 
-      final response = await http.get(url);
+      // 💡 [تعديل حارس الأمان]: حقن الترويسات والتوكن تلقائياً لحماية الرمز من المتطفلين
+      final response = await http.get(
+        url,
+        headers:
+            AuthService.headers, // ربط الطلب بتوكن الجوال المعتمد في مشروعك
+      );
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -43,6 +47,8 @@ class _PreVerificationScreenState extends State<PreVerificationScreen> {
             _isLoading = false;
           });
         }
+      } else if (response.statusCode == 401 || response.statusCode == 403) {
+        _showErrorSnackBar("عذراً، غير مصرح لك بالوصول لرمز التحقق المالي!");
       } else {
         _showErrorSnackBar("فشل جلب رمز التحقق من السيرفر!");
       }
