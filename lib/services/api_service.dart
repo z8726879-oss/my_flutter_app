@@ -10,9 +10,15 @@ class ApiService {
   // ==============================================================================
   static const String baseUrl = 'http://192.168.43.68:5000/api';
 
-  // 🛡️ [المحرك الأمني الموحد]: حقن وتوزيع التوكن التلقائي على جميع الدوال بالأسفل
+  // 🛡️ [المحرك الأمني الموحد المصلح ذاتياً]:
+  // يقرا التوكن حياً من الـ AuthService ويشحن صندوق الأمان فوراً للجوال
   static Map<String, String> get _headers {
-    return AuthService.headers;
+    return {
+      "Content-Type": "application/json",
+      "Accept": "application/json",
+      if (AuthService.token != null)
+        "Authorization": "Bearer ${AuthService.token}",
+    };
   }
 
   // ==============================================================================
