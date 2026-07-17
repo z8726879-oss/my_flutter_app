@@ -2,36 +2,30 @@ import 'dart:convert';
 import 'dart:async';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'auth_service.dart';
+import 'auth_service.dart'; // 💡 استيراد كلاس الـ AuthService المطور لحقن التوكن حياً
 
 class ApiService {
-  // =============================================================
-  // الإعدادات الأساسية (Base Config)
-  // قم بتغيير localhost إلى IP السيرفر الحقيقي عند الرفع
-  // =============================================================
+  // ==============================================================================
+  // ⚙️ الإعدادات الأساسية (Base Configuration)
+  // ==============================================================================
   static const String baseUrl = 'http://192.168.43.68:5000/api';
 
-  // ✨ المحرك الأمني: إرفاق التوكن تلقائياً في هيدرز كل طلب
+  // 🛡️ [المحرك الأمني الموحد]: حقن وتوزيع التوكن التلقائي على جميع الدوال بالأسفل
   static Map<String, String> get _headers {
-    final Map<String, String> headers = {
-      "Content-Type": "application/json",
-      "Accept": "application/json",
-    };
-    if (AuthService.token != null) {
-      headers["Authorization"] = "Bearer ${AuthService.token}";
-    }
-    return headers;
+    return AuthService.headers;
   }
 
-  // =============================================================
-  // ✨ محرك الكاش الذكي (لعلاج بطء الإنترنت في سوريا)
-  // =============================================================
+  // ==============================================================================
+  // 1. قطاع الشركات والأدوية (Inventory & Cache System)
+  // ==============================================================================
+
+  // ✨ محرك الكاش الذكي (لعلاج بطء الإنترنت)
   static Future<List<dynamic>> getCompaniesWithDrugs() async {
     final prefs = await SharedPreferences.getInstance();
     const String cacheKey = "cached_companies_drugs";
 
     try {
-      // محاولة الجلب مع مهلة زمنية قصيرة (10 ثواني) لعدم إزعاج المستخدم
+      // محاولة جلب البيانات حية من السيرفر بمهلة زمنية 10 ثوانٍ
       final response = await http
           .get(Uri.parse("$baseUrl/companies-with-drugs"), headers: _headers)
           .timeout(const Duration(seconds: 10));
@@ -42,10 +36,11 @@ class ApiService {
       }
     } catch (e) {
       // ignore: avoid_print
-      print("⚠️ نت ضعيف أو مقطوع، يتم استخدام النسخة المخزنة محلياً");
+      print(
+          "⚠️ الإنترنت ضعيف أو مقطوع، يتم سحب البيانات المخزنة محلياً بالجوال");
     }
 
-    // قراءة البيانات من ذاكرة الجوال في حال فشل الاتصال
+    // قراءة البيانات من ذاكرة الجوال المحلية في حال فشل الاتصال بالسيرفر
     String? cachedData = prefs.getString(cacheKey);
     if (cachedData != null) {
       return jsonDecode(cachedData);
@@ -53,10 +48,7 @@ class ApiService {
     return [];
   }
 
-  // =============================================================
-  // 1. قطاع الشركات والأدوية (Inventory)
-  // =============================================================
-
+  // جلب الشركات الصافي
   static Future<List<dynamic>> getCompanies() async {
     try {
       final response =
@@ -67,38 +59,44 @@ class ApiService {
     }
   }
 
+  // إضافة أو تعديل بيانات شركة
   static Future<void> addOrUpdateCompany(
       {int? id, required String name, required String image}) async {
     final url = id == null ? "$baseUrl/companies" : "$baseUrl/companies/$id";
     final body = jsonEncode({"name": name, "image": image});
+
     final response = id == null
         ? await http.post(Uri.parse(url), headers: _headers, body: body)
         : await http.put(Uri.parse(url), headers: _headers, body: body);
-    if (response.statusCode != 200 && response.statusCode != 201)
-      // ignore: curly_braces_in_flow_control_structures
-      throw Exception("فشل الحفظ");
+
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      throw Exception("فشل حفظ بيانات الشركة في السيرفر");
+    }
   }
 
+  // جلب الأدوية التابعة لشركة محددة
   static Future<List<dynamic>> getDrugsByCompany(int companyId) async {
     final response = await http
         .get(Uri.parse("$baseUrl/drugs/active/$companyId"), headers: _headers);
     return response.statusCode == 200
         ? jsonDecode(response.body)
-        : throw Exception("فشل جلب الأدوية");
+        : throw Exception("فشل جلب قائمة أدوية الشركة المستهدفة");
   }
 
+  // إضافة دواء جديد للمستودع
   static Future<void> addDrug(Map<String, dynamic> drugData) async {
     final response = await http.post(Uri.parse("$baseUrl/drugs"),
         headers: _headers, body: jsonEncode(drugData));
-    if (response.statusCode != 200 && response.statusCode != 201)
-      // ignore: curly_braces_in_flow_control_structures
-      throw Exception("فشل إضافة الدواء");
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      throw Exception("فشل إضافة الدواء الجديد للمخزون");
+    }
   }
 
-  // =============================================================
-  // 2. قطاع الطلبات (Orders System)
-  // =============================================================
+  // ==============================================================================
+  // 2. قطاع الطلبات والفواتير اللحظية (Orders System)
+  // ==============================================================================
 
+  // إنشاء وإرسال طلب شراء أدوية جديد
   static Future<void> createRequest(
       {required int pharmacyId, required List<dynamic> items}) async {
     try {
@@ -108,28 +106,31 @@ class ApiService {
             headers: _headers,
             body: jsonEncode({"pharmacy_id": pharmacyId, "items": items}),
           )
-          .timeout(
-              const Duration(seconds: 15)); // مهلة أطول للطلبات لضمان الوصول
+          .timeout(const Duration(
+              seconds: 15)); // مهلة أطول لضمان وصول الفاتورة كاملة
 
       if (response.statusCode != 200 && response.statusCode != 201) {
-        throw Exception(jsonDecode(response.body)["error"] ?? "فشل الإرسال");
+        throw Exception(
+            jsonDecode(response.body)["error"] ?? "فشل إرسال الطلب");
       }
     } on TimeoutException {
-      throw Exception("الإنترنت ضعيف جداً، فشل إرسال الطلب للسيرفر");
+      throw Exception("الاتصال ضعيف جداً، فشل وصول طلبك إلى خوادم المستودع");
     } catch (e) {
-      throw Exception("خطأ غير متوقع: $e");
+      throw Exception("خطأ غير متوقع في معالجة الفاتورة: $e");
     }
   }
 
+  // جلب سجل الطلبات الخاص بصيدلية محددة
   static Future<List<dynamic>> getRequestsByPharmacy(int pharmacyId) async {
     final response = await http.get(
         Uri.parse("$baseUrl/requests?pharmacy_id=$pharmacyId"),
         headers: _headers);
     return response.statusCode == 200
         ? jsonDecode(response.body)
-        : throw Exception("خطأ في السجل");
+        : throw Exception("خطأ في قراءة سجل الطلبات");
   }
 
+  // تحديث حالة الطلب (قيد المعالجة، تم التجهيز، مرفوض) من لوحة التحكم
   static Future<void> updateRequestStatus(
       {required int requestId,
       required String status,
@@ -144,41 +145,39 @@ class ApiService {
         "notification_message": message,
       }),
     );
-    if (response.statusCode != 200) throw Exception("فشل التحديث");
+    if (response.statusCode != 200)
+      // ignore: curly_braces_in_flow_control_structures
+      throw Exception("فشل تحديث حالة الطلب بالسيرفر");
   }
 
-  // =============================================================
-  // 3. المالية والإحصائيات (Finance & Stats)
-  // =============================================================
+  // ==============================================================================
+  // 3. المالية والإحصائيات الحركية (Finance & Stats)
+  // ==============================================================================
 
-  // ==============================================================================
-  // [النسخة المفرزة والمحمية كلياً] جلب الإحصائيات والديون بدعم رقم الصيدلي
-  // ==============================================================================
+  // جلب الإحصائيات العامة أو المخصصة لصيدلية معينة حسب الفترة الزمنية
   static Future<Map<String, dynamic>> getStatistics(String period,
       {int? pharmacyId}) async {
     try {
-      // 💡 بناء الرابط بشكل ديناميكي: إذا وجد pharmacyId يتم دمجه فوراً لفرز حساب الصيدلي
       String url = "$baseUrl/statistics?period=$period";
       if (pharmacyId != null) {
         url += "&pharmacy_id=$pharmacyId";
       }
 
-      final response = await http.get(
-        Uri.parse(url),
-        headers: _headers,
-      );
+      final response = await http.get(Uri.parse(url), headers: _headers);
       return response.statusCode == 200 ? jsonDecode(response.body) : {};
     } catch (e) {
       return {};
     }
   }
 
+  // جلب كشوفات الأرصدة الكلية للصيدليات (للديسكتوب حصراً)
   static Future<List<dynamic>> getPharmaciesBalances() async {
     final response = await http.get(Uri.parse("$baseUrl/pharmacies-balances"),
         headers: _headers);
     return response.statusCode == 200 ? jsonDecode(response.body) : [];
   }
 
+  // جلب السجلات المالية والمقبوضات
   static Future<List<dynamic>> getPayments({int? pharmacyId}) async {
     final url = pharmacyId != null
         ? "$baseUrl/payments?pharmacy_id=$pharmacyId"
@@ -186,6 +185,29 @@ class ApiService {
     final response = await http.get(Uri.parse(url), headers: _headers);
     return response.statusCode == 200
         ? jsonDecode(response.body)
-        : throw Exception("فشل جلب المالية");
+        : throw Exception("فشل جلب السجلات الماليّة الكلية");
+  }
+
+  // تحديث المبالغ والسندات المقبوضة
+  static Future<bool> updatePaymentAmount(
+      dynamic paymentId, double newAmount) async {
+    try {
+      final url = Uri.parse("$baseUrl/payments/$paymentId");
+
+      final response = await http
+          .put(
+            url,
+            headers:
+                _headers, // 🔑 يمرر التوكن الجديد الموثق للأدمن تلقائياً ويمنع الـ 401
+            body: jsonEncode({"amount_received": newAmount}),
+          )
+          .timeout(const Duration(seconds: 7));
+
+      return response.statusCode == 200;
+    } catch (e) {
+      // ignore: avoid_print
+      print("🛑 خطأ كارثي منع تعديل السند المالي: $e");
+      return false;
+    }
   }
 }

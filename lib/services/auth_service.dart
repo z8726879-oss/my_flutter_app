@@ -12,6 +12,15 @@ class AuthService {
   static String? token; // مفتاح الأمان JWT
   static Map<String, dynamic>? currentPharmacy; // بيانات الصيدلية الحالية
 
+  // 💡 [الحصن التلقائي]: محرك الهيدرز الذكي الذي يقرأ التوكن حياً ويغذي ملف ApiService
+  static Map<String, String> get headers {
+    return {
+      "Content-Type": "application/json",
+      "Accept": "application/json",
+      if (token != null) "Authorization": "Bearer $token",
+    };
+  }
+
   // =============================================================
   // 1. تسجيل الدخول (Login)
   // =============================================================
@@ -88,6 +97,5 @@ class AuthService {
   static void logout() {
     token = null;
     currentPharmacy = null;
-    // يمكن هنا إضافة مسح الـ SharedPreferences إذا كنت تستخدمها
   }
 }
