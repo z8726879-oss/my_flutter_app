@@ -2,16 +2,17 @@ import 'dart:convert';
 import 'dart:async';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'auth_service.dart'; // 💡 استيراد كلاس الـ AuthService المطور لحقن التوكن حياً
+import 'auth_service.dart'; // 💡 استيراد كلاس الـ AuthService الخاص بالجوال
 
 class ApiService {
   // ==============================================================================
-  // ⚙️ الإعدادات الأساسية (Base Configuration)
+  // ⚙️ الإعدادات الأساسية الخاصة بشبكة الجوال
   // ==============================================================================
+// 💡 التعديل المطلوب لـ كروم: تحويل الرابط إلى localhost
   static const String baseUrl = 'http://192.168.43.68:5000/api';
 
-  // 🛡️ [المحرك الأمني الموحد المصلح ذاتياً]:
-  // يقرا التوكن حياً من الـ AuthService ويشحن صندوق الأمان فوراً للجوال
+  // 🛡️ [المحرك الأمني الحركي للجوال]:
+  // يضمن قراءة التوكن حياً من الـ AuthService الخاص بالجوال عند كل طلب لمنع الـ 401
   static Map<String, String> get _headers {
     return {
       "Content-Type": "application/json",
@@ -22,16 +23,16 @@ class ApiService {
   }
 
   // ==============================================================================
-  // 1. قطاع الشركات والأدوية (Inventory & Cache System)
+  // 1. قطاع الشركات والأدوية (شاشة الصيدلي الرئيسية)
   // ==============================================================================
 
-  // ✨ محرك الكاش الذكي (لعلاج بطء الإنترنت)
+  // ✨ محرك الكاش الذكي (لعلاج بطء الإنترنت وسحب البضائع المخزنة محلياً بالجوال)
   static Future<List<dynamic>> getCompaniesWithDrugs() async {
     final prefs = await SharedPreferences.getInstance();
     const String cacheKey = "cached_companies_drugs";
 
     try {
-      // محاولة جلب البيانات حية من السيرفر بمهلة زمنية 10 ثوانٍ
+      // محاولة جلب البيانات حية من مسار الجوال المطور بالتوافقية المرنة
       final response = await http
           .get(Uri.parse("$baseUrl/companies-with-drugs"), headers: _headers)
           .timeout(const Duration(seconds: 10));
@@ -54,55 +55,37 @@ class ApiService {
     return [];
   }
 
-  // جلب الشركات الصافي
+  // جلب الشركات الصافي المخصص لشاشة الموبايل
   static Future<List<dynamic>> getCompanies() async {
     try {
-      final response =
-          await http.get(Uri.parse("$baseUrl/companies"), headers: _headers);
-      return response.statusCode == 200 ? jsonDecode(response.body) : [];
+      final response = await http
+          .get(Uri.parse("$baseUrl/companies-with-drugs"), headers: _headers)
+          .timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        return [];
+      }
     } catch (e) {
       return [];
     }
   }
 
-  // إضافة أو تعديل بيانات شركة
-  static Future<void> addOrUpdateCompany(
-      {int? id, required String name, required String image}) async {
-    final url = id == null ? "$baseUrl/companies" : "$baseUrl/companies/$id";
-    final body = jsonEncode({"name": name, "image": image});
-
-    final response = id == null
-        ? await http.post(Uri.parse(url), headers: _headers, body: body)
-        : await http.put(Uri.parse(url), headers: _headers, body: body);
-
-    if (response.statusCode != 200 && response.statusCode != 201) {
-      throw Exception("فشل حفظ بيانات الشركة في السيرفر");
-    }
-  }
-
-  // جلب الأدوية التابعة لشركة محددة
+  // جلب الأدوية التابعة لشركة معينة والمتاحة للصيدلي
   static Future<List<dynamic>> getDrugsByCompany(int companyId) async {
     final response = await http
         .get(Uri.parse("$baseUrl/drugs/active/$companyId"), headers: _headers);
     return response.statusCode == 200
         ? jsonDecode(response.body)
-        : throw Exception("فشل جلب قائمة أدوية الشركة المستهدفة");
-  }
-
-  // إضافة دواء جديد للمستودع
-  static Future<void> addDrug(Map<String, dynamic> drugData) async {
-    final response = await http.post(Uri.parse("$baseUrl/drugs"),
-        headers: _headers, body: jsonEncode(drugData));
-    if (response.statusCode != 200 && response.statusCode != 201) {
-      throw Exception("فشل إضافة الدواء الجديد للمخزون");
-    }
+        : throw Exception("فشل جلب قائمة الأدوية من السيرفر");
   }
 
   // ==============================================================================
-  // 2. قطاع الطلبات والفواتير اللحظية (Orders System)
+  // 2. قطاع السلة والطلبات (Orders System للصيدلي)
   // ==============================================================================
 
-  // إنشاء وإرسال طلب شراء أدوية جديد
+  // إنشاء وإرسال طلب شراء أدوية جديد من الجوال للمستودع
   static Future<void> createRequest(
       {required int pharmacyId, required List<dynamic> items}) async {
     try {
@@ -113,107 +96,58 @@ class ApiService {
             body: jsonEncode({"pharmacy_id": pharmacyId, "items": items}),
           )
           .timeout(const Duration(
-              seconds: 15)); // مهلة أطول لضمان وصول الفاتورة كاملة
+              seconds: 15)); // مهلة أطول لضمان وصول الفاتورة بالشبكات الضعيفة
 
       if (response.statusCode != 200 && response.statusCode != 201) {
         throw Exception(
             jsonDecode(response.body)["error"] ?? "فشل إرسال الطلب");
       }
     } on TimeoutException {
-      throw Exception("الاتصال ضعيف جداً، فشل وصول طلبك إلى خوادم المستودع");
+      throw Exception("الإنترنت ضعيف جداً، فشل وصول طلبك إلى خوادم المستودع");
     } catch (e) {
       throw Exception("خطأ غير متوقع في معالجة الفاتورة: $e");
     }
   }
 
-  // جلب سجل الطلبات الخاص بصيدلية محددة
+  // جلب سجل الفواتير والطلبات السابقة الخاصة بهذا الصيدلي فقط
   static Future<List<dynamic>> getRequestsByPharmacy(int pharmacyId) async {
     final response = await http.get(
         Uri.parse("$baseUrl/requests?pharmacy_id=$pharmacyId"),
         headers: _headers);
     return response.statusCode == 200
         ? jsonDecode(response.body)
-        : throw Exception("خطأ في قراءة سجل الطلبات");
-  }
-
-  // تحديث حالة الطلب (قيد المعالجة، تم التجهيز، مرفوض) من لوحة التحكم
-  static Future<void> updateRequestStatus(
-      {required int requestId,
-      required String status,
-      List? itemsToUpdate,
-      String? message}) async {
-    final response = await http.put(
-      Uri.parse("$baseUrl/requests/$requestId"),
-      headers: _headers,
-      body: jsonEncode({
-        "status": status,
-        "items_to_update": itemsToUpdate,
-        "notification_message": message,
-      }),
-    );
-    if (response.statusCode != 200)
-      // ignore: curly_braces_in_flow_control_structures
-      throw Exception("فشل تحديث حالة الطلب بالسيرفر");
+        : throw Exception("خطأ في قراءة سجل الطلبات الحالية");
   }
 
   // ==============================================================================
-  // 3. المالية والإحصائيات الحركية (Finance & Stats)
+  // 3. قطاع كشف الحساب المالي (الصيدلية حصراً)
   // ==============================================================================
 
-  // جلب الإحصائيات العامة أو المخصصة لصيدلية معينة حسب الفترة الزمنية
+  // جلب الإحصائيات والديون الخاصة بهذه الصيدلية فقط حسب الفترة الزمنية
   static Future<Map<String, dynamic>> getStatistics(String period,
-      {int? pharmacyId}) async {
+      {required int pharmacyId}) async {
     try {
-      String url = "$baseUrl/statistics?period=$period";
-      if (pharmacyId != null) {
-        url += "&pharmacy_id=$pharmacyId";
-      }
-
-      final response = await http.get(Uri.parse(url), headers: _headers);
+      final response = await http.get(
+        Uri.parse("$baseUrl/statistics?period=$period&pharmacy_id=$pharmacyId"),
+        headers: _headers,
+      );
       return response.statusCode == 200 ? jsonDecode(response.body) : {};
     } catch (e) {
       return {};
     }
   }
 
-  // جلب كشوفات الأرصدة الكلية للصيدليات (للديسكتوب حصراً)
-  static Future<List<dynamic>> getPharmaciesBalances() async {
-    final response = await http.get(Uri.parse("$baseUrl/pharmacies-balances"),
-        headers: _headers);
-    return response.statusCode == 200 ? jsonDecode(response.body) : [];
-  }
-
-  // جلب السجلات المالية والمقبوضات
-  static Future<List<dynamic>> getPayments({int? pharmacyId}) async {
-    final url = pharmacyId != null
-        ? "$baseUrl/payments?pharmacy_id=$pharmacyId"
-        : "$baseUrl/payments";
-    final response = await http.get(Uri.parse(url), headers: _headers);
-    return response.statusCode == 200
-        ? jsonDecode(response.body)
-        : throw Exception("فشل جلب السجلات الماليّة الكلية");
-  }
-
-  // تحديث المبالغ والسندات المقبوضة
-  static Future<bool> updatePaymentAmount(
-      dynamic paymentId, double newAmount) async {
+  // جلب كشف السندات والمقبوضات المالية والمدفوعات الخاصة بالصيدلية الحالية
+  static Future<List<dynamic>> getPayments({required int pharmacyId}) async {
     try {
-      final url = Uri.parse("$baseUrl/payments/$paymentId");
-
-      final response = await http
-          .put(
-            url,
-            headers:
-                _headers, // 🔑 يمرر التوكن الجديد الموثق للأدمن تلقائياً ويمنع الـ 401
-            body: jsonEncode({"amount_received": newAmount}),
-          )
-          .timeout(const Duration(seconds: 7));
-
-      return response.statusCode == 200;
+      final response = await http.get(
+          Uri.parse("$baseUrl/payments?pharmacy_id=$pharmacyId"),
+          headers: _headers);
+      return response.statusCode == 200
+          ? jsonDecode(response.body)
+          : throw Exception("فشل جلب السجلات الماليّة الخاصة بصيدليتك");
     } catch (e) {
-      // ignore: avoid_print
-      print("🛑 خطأ كارثي منع تعديل السند المالي: $e");
-      return false;
+      throw Exception("خطأ شبكي أثناء معالجة البيانات المالية: $e");
     }
   }
-}
+} // 💡 نهاية كلاس الجوال الصافي والمستقل كلياً
