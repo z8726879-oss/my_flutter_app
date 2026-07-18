@@ -36,53 +36,48 @@ class _PreVerificationScreenState extends State<PreVerificationScreen> {
   Future<void> _verifyCode() async {
     String enteredCode = _codeController.text.trim();
 
-    // التحقق الأولي للتأكد من أن الحقل ليس فارغاً قبل إرسال طلب للشبكة
     if (enteredCode.isEmpty) {
-      _showErrorSnackBar("يرجى إدخل رمز التسجيل أولاً!");
+      _showErrorSnackBar("يرجى إدخال رمز التسجيل أولاً!");
       return;
     }
 
     setState(() {
-      _isLoading = true; // تفعيل مؤشر التحميل أثناء الاتصال بالسيرفر
+      _isLoading = true;
     });
 
     try {
-      // 💡 تم تعديل الرابط وإكماله بالكامل هنا ليصبح صحيحاً
-      final url =
-          Uri.parse('http://192.168.43.68:5000/api/verify-registration-code');
+      final url = Uri.parse(
+          'http://192.168.43.68:5000/api/auth/verify-registration-code');
 
-      // إرسال الرمز الذي كتبه الصيدلي إلى السيرفر لفحصه
-      final response = await http.post(
-        url,
-        headers: {
-          "Content-Type":
-              "application/json", // إعلام السيرفر أن البيانات المرسلة هي JSON
-        },
-        body: jsonEncode({
-          'clientCode': enteredCode,
-        }),
-      );
+      // 💡 تعديل الترويسات لتشمل قبول جميع أنواع الاستجابات وتجنب حظر الأندرويد
+      final response = await http
+          .post(
+            url,
+            headers: {
+              "Content-Type": "application/json; charset=UTF-8",
+              "Accept": "application/json",
+            },
+            body: jsonEncode({
+              'clientCode': enteredCode,
+            }),
+          )
+          .timeout(const Duration(seconds: 7)); // وضع حد أقصى للانتظار 7 ثوانٍ
 
-      // السيرفر رد بأن الرمز صحيح ومطابق بنجاح
       if (response.statusCode == 200) {
         setState(() {
           _isLoading = false;
         });
 
-        // الانتقال الفوري لصفحة إنشاء الحساب ومنع العودة للخلف بنجاح
         Navigator.pushReplacement(
           // ignore: use_build_context_synchronously
           context,
           MaterialPageRoute(builder: (context) => const RegisterScreen()),
         );
-      }
-      // السيرفر رد بأن الرمز غير صحيح (401) أو هناك حقل فارغ (400)
-      else {
+      } else {
         final data = jsonDecode(response.body);
         setState(() {
           _isLoading = false;
         });
-        // عرض رسالة الخطأ القادمة من السيرفر مباشرة ("رمز التسجيل غير صحيح")
         _showErrorSnackBar(data['message'] ??
             'الرمز السري غير صحيح! يرجى مراجعة إدارة المستودع.');
       }
@@ -90,6 +85,10 @@ class _PreVerificationScreenState extends State<PreVerificationScreen> {
       setState(() {
         _isLoading = false;
       });
+      // 💡 طباعة الخطأ الحقيقي داخل الفلاتر لمعرفة سبب الحظر (انظر إلى الـ Debug Console في VS Code)
+      // ignore: avoid_print
+      print("🚨 خطأ اتصال الفلاتر بالشبكة: $e");
+
       _showErrorSnackBar(
           "تأكد من اتصال الجوال بنفس شبكة السيرفر ومطابقة الرمز!");
     }
