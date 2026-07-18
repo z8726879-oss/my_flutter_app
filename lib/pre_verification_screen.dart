@@ -5,9 +5,11 @@ import 'package:http/http.dart'
 import 'register_screen.dart';
 
 class PreVerificationScreen extends StatefulWidget {
+  // ignore: use_super_parameters
   const PreVerificationScreen({Key? key}) : super(key: key);
 
   @override
+  // ignore: library_private_types_in_public_api
   _PreVerificationScreenState createState() => _PreVerificationScreenState();
 }
 
@@ -46,7 +48,8 @@ class _PreVerificationScreenState extends State<PreVerificationScreen> {
 
     try {
       // 💡 تم تعديل الرابط وإكماله بالكامل هنا ليصبح صحيحاً
-      final url = Uri.parse('http://192.168.43');
+      final url =
+          Uri.parse('http://192.168.43.68:5000/api/verify-registration-code');
 
       // إرسال الرمز الذي كتبه الصيدلي إلى السيرفر لفحصه
       final response = await http.post(
@@ -68,6 +71,7 @@ class _PreVerificationScreenState extends State<PreVerificationScreen> {
 
         // الانتقال الفوري لصفحة إنشاء الحساب ومنع العودة للخلف بنجاح
         Navigator.pushReplacement(
+          // ignore: use_build_context_synchronously
           context,
           MaterialPageRoute(builder: (context) => const RegisterScreen()),
         );
