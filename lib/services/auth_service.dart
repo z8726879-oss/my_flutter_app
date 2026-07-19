@@ -52,9 +52,6 @@ class AuthService {
     }
   }
 
-  // =============================================================
-  // 2. إنشاء حساب جديد (Register)
-  // =============================================================
   static Future<Map<String, dynamic>> register({
     required String pharmacyName,
     required String phone,
@@ -63,8 +60,14 @@ class AuthService {
     required String address,
   }) async {
     try {
-      // 👈 2. جلب المفتاح السري تلقائياً من الملف الخارجي (.env)
+      // 1. جلب المفتاح السري
       final String secretKey = dotenv.env['PHARMA_SECURE_KEY'] ?? '';
+
+      // 💡 فحص استباقي: إذا كان المفتاح فارغاً، نرمي خطأ واضحاً ليظهر على شاشة الجوال
+      if (secretKey.isEmpty) {
+        throw Exception(
+            "⚠️ خطأ في التطبيق: ملف الـ .env مفقود أو لم يتم قراءته، مفتاح الأمان فارغ!");
+      }
 
       final response = await http.post(
         Uri.parse("$baseUrl/pharmacy/register"),
@@ -75,25 +78,34 @@ class AuthService {
           "password": password,
           "city": city,
           "address": address,
-          "security_key":
-              secretKey, // 👈 3. حقن المفتاح السري هنا تلقائياً ليمر من جدار حماية السيرفر
+          "security_key": secretKey,
         }),
       );
 
       final data = jsonDecode(response.body);
 
-      // هنا قمنا بتعديل قراءة الخطأ ليتوافق مع السيرفر (لأن السيرفر الخاص بك يرجع الحقل باسم message وليس error)
       if (response.statusCode == 200 || response.statusCode == 201) {
         return data;
       } else {
-        throw Exception(data["message"] ?? "فشل إنشاء الحساب الصيدلاني");
+        // 💡 استخراج رسالة السيرفر الحقيقية (سواء كانت في حقل message أو error أو مسار آخر)
+        String serverError = data["message"] ??
+            data["error"] ??
+            "كود الخطأ من السيرفر: ${response.statusCode}";
+        throw Exception(serverError);
       }
     } catch (e) {
-      // تنظيف رسالة الخطأ من كلمة Exception الزائدة لتظهر نظيفة للمستخدم في الـ UI
       String errorMsg = e.toString();
       if (errorMsg.startsWith("Exception: ")) {
         errorMsg = errorMsg.replaceFirst("Exception: ", "");
       }
+
+      // 💡 إذا كان الخطأ بسبب عدم القدرة على الوصول للسيرفر (الـ IP تغير أو السيرفر مطفأ)
+      if (errorMsg.contains("SocketException") ||
+          errorMsg.contains("Connection failed")) {
+        throw Exception(
+            "❌ فشل الاتصال بالسيرفر! تأكد من تشغيل السيرفر ومن صحة الـ IP: $baseUrl");
+      }
+
       throw Exception(errorMsg);
     }
   }

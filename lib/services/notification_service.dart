@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:audioplayers/audioplayers.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'auth_service.dart';
 
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   debugPrint("🔔 إشعار خلفية: ${message.notification?.title}");
@@ -168,24 +168,18 @@ class NotificationService {
 
   static Future<List<dynamic>> fetchSavedNotifications(int pharmacyId) async {
     try {
-      final url =
-          Uri.parse('http://192.168.43.68:5000/api/notifications/$pharmacyId');
+      // 🔗 رابط الاتصال المباشر والكامل بالسيرفر الخاص بك
+      final url = Uri.parse('http://192.168.43');
 
-      final prefs = await SharedPreferences.getInstance();
-      final String? token = prefs.getString('auth_token');
-
-      // 💡 طباعة تحذير في حال كان التوكن فارغاً لتسهيل تتبع الأخطاء أثناء التطوير
-      if (token == null) {
-        debugPrint(
-            "⚠️ تحذير: لم يتم العثور على التوكن في SharedPreferences! سيتم إرسال الطلب بدون ترويسة حماية.");
-      }
-
+      // 📡 إرسال الطلب مع بناء الترويسة الحركية المستقلة بداخل الدالة مباشرة
       final response = await http.get(
         url,
         headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          if (token != null) 'Authorization': 'Bearer $token',
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          // جلب التوكن حياً من AuthService وحقنه بصيغة Bearer القياسية
+          if (AuthService.token != null)
+            "Authorization": "Bearer ${AuthService.token}",
         },
       );
 
@@ -195,8 +189,8 @@ class NotificationService {
           return data['notifications'];
         }
       } else {
-        // 💡 طباعة كود الخطأ القادم من السيرفر (مثل 401 أو 403) لمعرفة سبب الرفض
-        debugPrint("⚠️ السيرفر رد بكود خطأ: ${response.statusCode}");
+        debugPrint(
+            "⚠️ رفض الخادم طلب الإشعارات بكود خطأ: ${response.statusCode}");
       }
       return [];
     } catch (e) {
