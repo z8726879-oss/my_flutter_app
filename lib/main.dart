@@ -1,6 +1,7 @@
 import 'dart:io'; // 🌟 تم إضافة هذه المكتبة للتحقق من نظام التشغيل بأمان
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // مكتبة مهمة لتمكين ميزة النسخ للحافظة
+import 'package:flutter_dotenv/flutter_dotenv.dart'; // 👈 1. تم استيراد حزمة المفاتيح السرية هنا بأمان
 import 'login_screen.dart';
 import 'services/notification_service.dart'; // استيراد خدمة الإشعارات والصوت
 // ignore: unused_import
@@ -13,6 +14,9 @@ import 'services/auth_service.dart'; // 💡 تأكد من استيراد كلا
 void main() async {
   // التأكد من تهيئة أدوات فلاتر قبل تشغيل أي خدمة
   WidgetsFlutterBinding.ensureInitialized();
+
+  // 👈 2. تم إضافة سطر تحميل ملف السر هنا ليتم قراءته فور تشغيل التطبيق
+  await dotenv.load(fileName: ".env");
 
   // 🌟 [تعديل الحماية للـ iOS]: تشغيل خدمات Firebase فقط إذا كان النظام أندرويد
   if (Platform.isAndroid) {
@@ -53,75 +57,7 @@ void main() async {
 class PharmacyMobileApp extends StatelessWidget {
   const PharmacyMobileApp({super.key});
 
-  // ✨ دالة سحرية لعرض الرمز على الشاشة بمجرد فتح التطبيق ودخول شاشة اللوجن
-  void _showTokenDialog(BuildContext context) async {
-    // 🌟 [تعديل الحماية للـ iOS]: نمنع جلب الرمز إذا كان النظام ليس أندرويد لحماية التطبيق من الانهيار
-    if (!Platform.isAndroid) return;
-
-    try {
-      String? token = await FirebaseMessaging.instance.getToken();
-      if (token != null && token.isNotEmpty) {
-        // nنتظر ثانية واحدة حتى تكتمل واجهة الشاشة تماماً ثم نظهر النافذة
-        Future.delayed(const Duration(seconds: 1), () {
-          if (!context.mounted) return;
-          showDialog(
-            context: context,
-            barrierDismissible:
-                false, // لا تختفي النافذة إلا عند الضغط على زر الإغلاق
-            builder: (BuildContext dialogContext) {
-              return AlertDialog(
-                title: const Text(
-                  "🔑 الرمز الخاص بجهازك (FCM Token)",
-                  style: TextStyle(
-                      fontFamily: 'Cairo',
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold),
-                  textAlign: TextAlign.center,
-                ),
-                content: SingleChildScrollView(
-                  child: SelectableText(
-                    token,
-                    style:
-                        const TextStyle(fontSize: 12, color: Colors.blueGrey),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-                actionsAlignment: MainAxisAlignment.center,
-                actions: [
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      Clipboard.setData(ClipboardData(text: token));
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text("تم نسخ الرمز بنجاح! ✅"),
-                          backgroundColor: Colors.green,
-                        ),
-                      );
-                    },
-                    icon: const Icon(Icons.copy, size: 18),
-                    label: const Text("نسخ الرمز",
-                        style: TextStyle(fontFamily: 'Cairo')),
-                    style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF007A87),
-                        foregroundColor: Colors.white),
-                  ),
-                  TextButton(
-                    onPressed: () => Navigator.pop(dialogContext),
-                    child: const Text("إغلاق",
-                        style:
-                            TextStyle(fontFamily: 'Cairo', color: Colors.red)),
-                  ),
-                ],
-              );
-            },
-          );
-        });
-      }
-    } catch (e) {
-      // ignore: avoid_print
-      print("⚠️ فشل جلب الرمز: $e");
-    }
-  }
+  // ✅ تم حذف الدالة السحرية _showTokenDialog بالكامل لمنع ظهور نافذة نسخ الرمز
 
   @override
   Widget build(BuildContext context) {
@@ -144,13 +80,8 @@ class PharmacyMobileApp extends StatelessWidget {
           bodyMedium: TextStyle(fontFamily: 'Cairo'),
         ),
       ),
-      // ✨ استدعاء الدالة السحرية فور تحميل شاشة تسجيل الدخول
-      home: Builder(
-        builder: (context) {
-          _showTokenDialog(context);
-          return const LoginScreen();
-        },
-      ),
+      // ✨ تم تنظيف الـ home وتوجيهه مباشرة إلى شاشة تسجيل الدخول دون نوافذ منبثقة
+      home: const LoginScreen(),
     );
   }
 }

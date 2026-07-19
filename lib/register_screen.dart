@@ -40,23 +40,29 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() => isLoading = true);
 
     try {
-      await AuthService.register(
+      // استدعاء دالة التسجيل (التي تحقن الـ security_key تلقائياً)
+      final responseData = await AuthService.register(
         pharmacyName: nameController.text.trim(),
         phone: phoneController.text.trim(),
         password: passwordController.text.trim(),
         city: cityController.text.trim(),
         address: addressController.text.trim(),
-        // تم حذف حقل الرخصة من هنا
       );
 
       if (mounted) {
+        // قراءة رسالة النجاح القادمة من السيرفر الخاص بك
+        String successMessage =
+            responseData["message"] ?? "تم إنشاء حساب الصيدلية بنجاح!";
+
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            backgroundColor: Color(0xFF10B981),
-            content: Text("تم إنشاء حساب الصيدلية بنجاح!",
-                style: TextStyle(fontFamily: 'Cairo')),
+          SnackBar(
+            backgroundColor: const Color(0xFF10B981),
+            content: Text(successMessage,
+                style: const TextStyle(fontFamily: 'Cairo')),
           ),
         );
+
+        // 🎯 التوجيه إلى شاشة تسجيل الدخول فوراً بناءً على رغبتك
         Navigator.pushReplacement(
             context, MaterialPageRoute(builder: (_) => const LoginScreen()));
       }
@@ -136,7 +142,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                 _buildInputField(
                   controller: cityController,
-                  label: "المدينة",
+                  label: "المنطقة",
                   icon: Icons.location_city,
                 ),
                 const SizedBox(height: 14),

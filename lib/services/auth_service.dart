@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class AuthService {
   // الرابط الأساسي للسيرفر (Android Emulator: 10.0.2.2 | Chrome: localhost)
@@ -62,6 +63,9 @@ class AuthService {
     required String address,
   }) async {
     try {
+      // 👈 2. جلب المفتاح السري تلقائياً من الملف الخارجي (.env)
+      final String secretKey = dotenv.env['PHARMA_SECURE_KEY'] ?? '';
+
       final response = await http.post(
         Uri.parse("$baseUrl/pharmacy/register"),
         headers: {"Content-Type": "application/json"},
@@ -71,27 +75,35 @@ class AuthService {
           "password": password,
           "city": city,
           "address": address,
+          "security_key":
+              secretKey, // 👈 3. حقن المفتاح السري هنا تلقائياً ليمر من جدار حماية السيرفر
         }),
       );
 
       final data = jsonDecode(response.body);
 
+      // هنا قمنا بتعديل قراءة الخطأ ليتوافق مع السيرفر (لأن السيرفر الخاص بك يرجع الحقل باسم message وليس error)
       if (response.statusCode == 200 || response.statusCode == 201) {
         return data;
       } else {
-        throw Exception(data["error"] ?? "فشل إنشاء الحساب الصيدلاني");
+        throw Exception(data["message"] ?? "فشل إنشاء الحساب الصيدلاني");
       }
     } catch (e) {
-      throw Exception(e.toString());
+      // تنظيف رسالة الخطأ من كلمة Exception الزائدة لتظهر نظيفة للمستخدم في الـ UI
+      String errorMsg = e.toString();
+      if (errorMsg.startsWith("Exception: ")) {
+        errorMsg = errorMsg.replaceFirst("Exception: ", "");
+      }
+      throw Exception(errorMsg);
     }
   }
 
   // =============================================================
   // 3. التحقق من تسجيل الدخول (Check Auth State)
   // =============================================================
-  static bool get isLoggedIn => token != null;
-
-  // =============================================================
+  static bool get isLoggedIn =>
+      token !=
+      null; // =============================================================
   // 4. تسجيل الخروج والأمان (Logout)
   // =============================================================
   static void logout() {

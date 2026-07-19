@@ -25,6 +25,7 @@ dependencies:
   # 🌟 تم التعديل هنا: تحديث الإصدار إلى 17.0.0 لحل مشكلة تعارض مترجم الجافا سحابياً
   flutter_local_notifications: ^17.0.0
   intl: ^0.18.1
+  flutter_dotenv: ^6.0.1
 
 dev_dependencies:
   flutter_test:
@@ -45,3 +46,4 @@ flutter:
   uses-material-design: true
   assets:
     - assets/sounds/notification_sound_for_whatsapp.mp3
+    - .env # 
