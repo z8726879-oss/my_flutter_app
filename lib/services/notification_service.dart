@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   debugPrint("🔔 إشعار خلفية: ${message.notification?.title}");
@@ -163,18 +164,39 @@ class NotificationService {
   }
 
   // ✨ 6️⃣ الدالة المضافة والمصححة لجلب الإشعارات المحفوظة من قاعدة بيانات السيرفر
+// تأكد من استيراد مكتبة الحفظ لديك
+
   static Future<List<dynamic>> fetchSavedNotifications(int pharmacyId) async {
     try {
-      // تم تثبيت الـ IP والـ Port بناءً على إعدادات شبكة مشروعك الصحيحة
       final url =
           Uri.parse('http://192.168.43.68:5000/api/notifications/$pharmacyId');
-      final response = await http.get(url);
+
+      final prefs = await SharedPreferences.getInstance();
+      final String? token = prefs.getString('auth_token');
+
+      // 💡 طباعة تحذير في حال كان التوكن فارغاً لتسهيل تتبع الأخطاء أثناء التطوير
+      if (token == null) {
+        debugPrint(
+            "⚠️ تحذير: لم يتم العثور على التوكن في SharedPreferences! سيتم إرسال الطلب بدون ترويسة حماية.");
+      }
+
+      final response = await http.get(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
+      );
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['success'] == true) {
-          return data['notifications']; // إرجاع مصفوفة الإشعارات المخزنة
+          return data['notifications'];
         }
+      } else {
+        // 💡 طباعة كود الخطأ القادم من السيرفر (مثل 401 أو 403) لمعرفة سبب الرفض
+        debugPrint("⚠️ السيرفر رد بكود خطأ: ${response.statusCode}");
       }
       return [];
     } catch (e) {

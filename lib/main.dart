@@ -1,5 +1,6 @@
 import 'dart:io'; // 🌟 تم إضافة هذه المكتبة للتحقق من نظام التشغيل بأمان
 import 'package:flutter/material.dart';
+// ignore: unnecessary_import
 import 'package:flutter/services.dart'; // مكتبة مهمة لتمكين ميزة النسخ للحافظة
 import 'package:flutter_dotenv/flutter_dotenv.dart'; // 👈 1. تم استيراد حزمة المفاتيح السرية هنا بأمان
 import 'login_screen.dart';
