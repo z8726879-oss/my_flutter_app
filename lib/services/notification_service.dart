@@ -168,8 +168,9 @@ class NotificationService {
 
   static Future<List<dynamic>> fetchSavedNotifications(int pharmacyId) async {
     try {
-      // 🔗 رابط الاتصال المباشر والكامل بالسيرفر الخاص بك
-      final url = Uri.parse('http://192.168.43');
+      // 🔗 تصحيح الرابط بالكامل ليتصل بالسيرفر والمسار الصحيح
+      final url =
+          Uri.parse('http://192.168.43.68:5000/api/notifications/$pharmacyId');
 
       // 📡 إرسال الطلب مع بناء الترويسة الحركية المستقلة بداخل الدالة مباشرة
       final response = await http.get(
@@ -177,7 +178,7 @@ class NotificationService {
         headers: {
           "Content-Type": "application/json",
           "Accept": "application/json",
-          // جلب التوكن حياً من AuthService وحقنه بصيغة Bearer القياسية
+          // جلب التوكن حياً من AuthService وحقنه بصيغة Bearer القياسية لتخطي الحارس الصارم
           if (AuthService.token != null)
             "Authorization": "Bearer ${AuthService.token}",
         },
