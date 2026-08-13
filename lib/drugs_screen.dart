@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../cart_service.dart';
 import '../cart_item.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
 class DrugsScreen extends StatefulWidget {
   final int companyId;
@@ -194,24 +196,37 @@ class _DrugItemCardState extends State<DrugItemCard> {
       );
     }
 
-    // إذا كان النص القادم يحتوي على رابط يبدأ بـ http، نقوم بعرضه فوراً كصورة شبكية سريعة
+    // 🎯 التعديل المحسن: عرض الصور عبر شبكة إنترنت مكّيشة ومحكومة بالوقت والذاكرة
     if (imageStr.startsWith('http')) {
-      return Image.network(
-        imageStr,
+      return CachedNetworkImage(
+        imageUrl: imageStr,
         fit: BoxFit.contain,
-        // مؤشر تحميل خفيف جداً يظهر أثناء تحميل الصورة لأول مرة
-        loadingBuilder: (context, child, loadingProgress) {
-          if (loadingProgress == null) return child;
-          return const Center(
-            child: SizedBox(
-              width: 20,
-              height: 20,
-              child: CircularProgressIndicator(
-                  strokeWidth: 2, color: Color(0xFF007A87)),
-            ),
-          );
-        },
-        errorBuilder: (c, e, s) =>
+
+        // ⏳ السحر هنا: إجبار الهاتف على تحديث الصورة تلقائياً من السيرفر كل 24 ساعة
+        cacheManager: CacheManager(
+          Config(
+            'drugs_images_cache_key', // مفتاح فريد لمجلد كاش الأدوية
+            stalePeriod: const Duration(
+                days: 1), // عمر صلاحية الصورة في هارد الجوال (يوم واحد)
+            maxNrOfCacheObjects:
+                1000, // أقصى عدد صور يتم تخزينها في نفس الوقت بالخلفية
+          ),
+        ),
+
+        // 🔒 صمام أمان الرام: فك تشفير الصورة بأبعاد مصغرة لمنع تعليق الجوال عند السكرول
+        maxHeightDiskCache: 200,
+        maxWidthDiskCache: 200,
+
+        // مؤشر تحميل خفيف جداً يظهر "لأول مرة فقط في تاريخ التطبيق" لكل صورة
+        placeholder: (context, url) => const Center(
+          child: SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(
+                strokeWidth: 2, color: Color(0xFF007A87)),
+          ),
+        ),
+        errorWidget: (context, url, error) =>
             const Icon(Icons.broken_image, size: 40, color: Colors.grey),
       );
     }

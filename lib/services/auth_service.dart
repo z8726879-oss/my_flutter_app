@@ -48,7 +48,23 @@ class AuthService {
         throw Exception(data["error"] ?? "فشل تسجيل الدخول");
       }
     } catch (e) {
-      throw Exception(e.toString());
+      String errorMsg = e.toString();
+
+      // تنظيف الرسالة من كلمة Exception الافتراضية
+      if (errorMsg.startsWith("Exception: ")) {
+        errorMsg = errorMsg.replaceFirst("Exception: ", "");
+      }
+
+      // 🔒 رادار الحماية: حظر ومنع تسريب الـ IP أو المنفذ Port عند فشل الوصول للسيرفر
+      if (errorMsg.contains("SocketException") ||
+          errorMsg.contains("Connection failed") ||
+          errorMsg.contains("TimeoutException") ||
+          errorMsg.contains("HandshakeException")) {
+        throw Exception(
+            "❌ عذراً، فشل الاتصال بخادم مستودع الأدوية الرئيسي. يرجى التحقق من اتصال الإنترنت لديك أو المحاولة لاحقاً.");
+      }
+
+      throw Exception(errorMsg);
     }
   }
 
@@ -99,18 +115,20 @@ class AuthService {
         errorMsg = errorMsg.replaceFirst("Exception: ", "");
       }
 
-      // 💡 إذا كان الخطأ بسبب عدم القدرة على الوصول للسيرفر (الـ IP تغير أو السيرفر مطفأ)
+      // 🔒 الحل السيبراني: حجب الـ IP تماماً وصياغة رسالة عامة آمنة للصيدلي
       if (errorMsg.contains("SocketException") ||
-          errorMsg.contains("Connection failed")) {
+          errorMsg.contains("Connection failed") ||
+          errorMsg.contains("HandshakeException")) {
+        // أضفنا حماية ضد أخطاء الـ SSL أيضاً
         throw Exception(
-            "❌ فشل الاتصال بالسيرفر! تأكد من تشغيل السيرفر ومن صحة الـ IP: $baseUrl");
+            "❌ عذراً، فشل الاتصال بخادم مستودع الأدوية الرئيسي. يرجى التحقق من اتصال الإنترنت لديك أو المحاولة لاحقاً.");
       }
 
       throw Exception(errorMsg);
     }
   }
-
   // =============================================================
+
   // 3. التحقق من تسجيل الدخول (Check Auth State)
   // =============================================================
   static bool get isLoggedIn =>
