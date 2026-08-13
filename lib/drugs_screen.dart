@@ -196,60 +196,71 @@ class _DrugItemCardState extends State<DrugItemCard> {
       );
     }
 
-    // 🎯 التعديل المحسن: عرض الصور بأبعاد متناسقة 1:1 دون تمطيط أو تشويه
+    // 🎯 التعديل المحسن: معالجة تنوع علب الأدوية (شراب، كريم، حبوب، قطرات) دون أي مط
     if (imageStr.startsWith('http')) {
-      return CachedNetworkImage(
-        imageUrl: imageStr,
-        // 🛠️ التصحيح: BoxFit.scaleDown يمنع تمطيط الصورة ويحافظ على نسب الطول والعرض الأصلية
-        fit: BoxFit.scaleDown,
-
-        // فرض مساحة مربعة قياسية لصور الأدوية داخل القائمة
-        width: 60,
-        height: 60,
-
-        cacheManager: CacheManager(
-          Config(
-            'drugs_images_cache_key',
-            stalePeriod: const Duration(days: 1),
-            maxNrOfCacheObjects: 1000,
-          ),
+      return Container(
+        width: 65, // حجز مساحة مربعة ثابتة ومتناسقة في القائمة لجميع الأصناف
+        height: 65,
+        padding: const EdgeInsets.all(
+            4), // ترك مسافة أمان صغيرة لكي لا تلتصق حواف العلبة بالإطار
+        decoration: BoxDecoration(
+          color: const Color(
+              0xFFF4F7F8), // 🎨 خلفية ناعمة تخفي الفراغات الناتجة عن اختلاف أشكال العلب
+          borderRadius: BorderRadius.circular(8), // حواف دائرية أنيقة للبطاقة
         ),
+        child: CachedNetworkImage(
+          imageUrl: imageStr,
+          // 🔒 السحر هنا: BoxFit.contain يضمن ظهور كامل زجاجة الشراب أو علبة الحبوب بأبعادها الحقيقية دون أي مط
+          fit: BoxFit.contain,
 
-        maxHeightDiskCache: 200,
-        maxWidthDiskCache: 200,
-
-        placeholder: (context, url) => const Center(
-          child: SizedBox(
-            width: 20,
-            height: 20,
-            child: CircularProgressIndicator(
-                strokeWidth: 2, color: Color(0xFF007A87)),
+          cacheManager: CacheManager(
+            Config(
+              'drugs_images_cache_key',
+              stalePeriod: const Duration(days: 1),
+              maxNrOfCacheObjects: 1000,
+            ),
           ),
-        ),
+          maxHeightDiskCache: 200,
+          maxWidthDiskCache: 200,
 
-        // خطة الطوارئ للشبكة المحلية الحالية مع ضبط التناسق البصري
-        errorWidget: (context, url, error) => Image.network(
-          imageStr,
-          fit: BoxFit.scaleDown, // 🔒 الحفاظ على أبعاد الصورة هنا أيضاً
-          width: 60,
-          height: 60,
-          cacheHeight: 200,
-          cacheWidth: 200,
-          errorBuilder: (c, e, s) =>
-              const Icon(Icons.broken_image, size: 40, color: Colors.grey),
+          placeholder: (context, url) => const Center(
+            child: SizedBox(
+              width: 15,
+              height: 15,
+              child: CircularProgressIndicator(
+                  strokeWidth: 2, color: Color(0xFF007A87)),
+            ),
+          ),
+
+          // خطة الطوارئ للشبكة المحلية الحالية مع الحفاظ التام على أبعاد العلب المتنوعة
+          errorWidget: (context, url, error) => Image.network(
+            imageStr,
+            fit: BoxFit.contain, // حماية أبعاد الأشكال المتنوعة في خطة الطوارئ
+            cacheHeight: 200,
+            cacheWidth: 200,
+            errorBuilder: (c, e, s) =>
+                const Icon(Icons.broken_image, size: 35, color: Colors.grey),
+          ),
         ),
       );
     }
 
     // كود احتياطي (Fallback) في حال وجود صور قديمة في السيرفر لا تزال بصيغة Base64
     try {
-      return Image.memory(
-        base64Decode(imageStr),
-        fit: BoxFit.scaleDown, // 🔒 تصحيح المط للـ Base64 أيضاً
-        width: 60,
-        height: 60,
-        errorBuilder: (c, e, s) =>
-            const Icon(Icons.broken_image, size: 40, color: Colors.grey),
+      return Container(
+        width: 65,
+        height: 65,
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF4F7F8),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Image.memory(
+          base64Decode(imageStr),
+          fit: BoxFit.contain, // 🔒 تصحيح المط للـ Base64 أيضاً
+          errorBuilder: (c, e, s) =>
+              const Icon(Icons.broken_image, size: 35, color: Colors.grey),
+        ),
       );
     } catch (e) {
       return const Icon(Icons.broken_image, size: 40, color: Colors.grey);
