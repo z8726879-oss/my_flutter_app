@@ -1,5 +1,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-   <uses-permission android:name="android.permission.INTERNET" />
+    <!-- 🌐 صلاحية الاتصال بالإنترنت الأساسية -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    
+    <!-- 🎯 الحماية الإضافية: تمنح مكتبة الكاش صلاحية فحص حالة الشبكة لقراءة الصور من هارد الجوال -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+
     <application
         android:label="ClickPharma"
         android:usesCleartextTraffic="true"
