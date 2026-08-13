@@ -45,11 +45,7 @@ class _DrugsScreenState extends State<DrugsScreen> {
   // 🎯 المكان الصحيح والمثالي مئة بالمئة: أضفنا دالة التنظيف هنا مباشرة لتطهير الذاكرة
   @override
   void dispose() {
-    // 🔒 1. صمام الأمان الحاسم: تدمير وحذف كاش رامات الصور تماماً فور الخروج من شاشة هذه الشركة
-    PaintingBinding.instance.imageCache.clear();
-    PaintingBinding.instance.imageCache.clearLiveImages();
-
-    // 🔒 2. تنظيف وتفريغ متحكم صندوق البحث لمنع تراكم المدخلات النصية بالذاكرة العشوائية
+    // 🔒. تنظيف وتفريغ متحكم صندوق البحث لمنع تراكم المدخلات النصية بالذاكرة العشوائية
     searchController.dispose();
 
     super.dispose(); // 🔒 إغلاق وتفريغ الشاشة بشكل قياسي آمن
