@@ -196,13 +196,17 @@ class _DrugItemCardState extends State<DrugItemCard> {
       );
     }
 
-    // 🎯 التعديل المحسن والمحمي سيبرانياً ضد حظر الشبكات المحلية
+    // 🎯 التعديل المحسن: عرض الصور بأبعاد متناسقة 1:1 دون تمطيط أو تشويه
     if (imageStr.startsWith('http')) {
       return CachedNetworkImage(
         imageUrl: imageStr,
-        fit: BoxFit.contain,
+        // 🛠️ التصحيح: BoxFit.scaleDown يمنع تمطيط الصورة ويحافظ على نسب الطول والعرض الأصلية
+        fit: BoxFit.scaleDown,
 
-        // ⏳ تحديث الصور تلقائياً من السيرفر كل 24 ساعة أونلاين
+        // فرض مساحة مربعة قياسية لصور الأدوية داخل القائمة
+        width: 60,
+        height: 60,
+
         cacheManager: CacheManager(
           Config(
             'drugs_images_cache_key',
@@ -211,7 +215,6 @@ class _DrugItemCardState extends State<DrugItemCard> {
           ),
         ),
 
-        // 🔒 صمام أمان الرام للمستقبل
         maxHeightDiskCache: 200,
         maxWidthDiskCache: 200,
 
@@ -224,16 +227,14 @@ class _DrugItemCardState extends State<DrugItemCard> {
           ),
         ),
 
-        // 🛠️ خطة الطوارئ الفورية: إذا حظرت المكتبة الـ http المحلي، يتم العرض عبر المحرك الرسمي فوراً
+        // خطة الطوارئ للشبكة المحلية الحالية مع ضبط التناسق البصري
         errorWidget: (context, url, error) => Image.network(
           imageStr,
-          fit: BoxFit.contain,
-
-          // 🔒 صمام أمان الرام البديل: فك تشفير الصورة بأبعاد صغيرة جداً في ذاكرة الهاتف
-          // هذا يمنع تهنيج الجوال تماماً مع الـ 3000 صنف على هاتف الصيدلي حالياً
+          fit: BoxFit.scaleDown, // 🔒 الحفاظ على أبعاد الصورة هنا أيضاً
+          width: 60,
+          height: 60,
           cacheHeight: 200,
           cacheWidth: 200,
-
           errorBuilder: (c, e, s) =>
               const Icon(Icons.broken_image, size: 40, color: Colors.grey),
         ),
@@ -244,7 +245,9 @@ class _DrugItemCardState extends State<DrugItemCard> {
     try {
       return Image.memory(
         base64Decode(imageStr),
-        fit: BoxFit.contain,
+        fit: BoxFit.scaleDown, // 🔒 تصحيح المط للـ Base64 أيضاً
+        width: 60,
+        height: 60,
         errorBuilder: (c, e, s) =>
             const Icon(Icons.broken_image, size: 40, color: Colors.grey),
       );
