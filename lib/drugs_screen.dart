@@ -196,21 +196,15 @@ class _DrugItemCardState extends State<DrugItemCard> {
       );
     }
 
-    // 🎯 التعديل المحسن: معالجة تنوع علب الأدوية (شراب، كريم، حبوب، قطرات) دون أي مط
+    // 🎯 التعديل الهندسي النهائي: توحيد حجم الفراغات لعلب الكريم النحيفة وعلب الحب العريضة دون أي تشويه
     if (imageStr.startsWith('http')) {
-      return Container(
-        width: 65, // حجز مساحة مربعة ثابتة ومتناسقة في القائمة لجميع الأصناف
-        height: 65,
-        padding: const EdgeInsets.all(
-            4), // ترك مسافة أمان صغيرة لكي لا تلتصق حواف العلبة بالإطار
-        decoration: BoxDecoration(
-          color: const Color(
-              0xFFF4F7F8), // 🎨 خلفية ناعمة تخفي الفراغات الناتجة عن اختلاف أشكال العلب
-          borderRadius: BorderRadius.circular(8), // حواف دائرية أنيقة للبطاقة
-        ),
+      return SizedBox(
+        width:
+            60, // 📏 حجز مربع قياسي وموحد في القائمة لضبط هندسة الفراغات الرمادية لكافة الأصناف
+        height: 60,
         child: CachedNetworkImage(
           imageUrl: imageStr,
-          // 🔒 السحر هنا: BoxFit.contain يضمن ظهور كامل زجاجة الشراب أو علبة الحبوب بأبعادها الحقيقية دون أي مط
+          // ✅ الـ BoxFit.contain الأصلي الخاص بك الذي يضمن بقاء علبة الكريم مستطيلة نحيفة كما هي دون تمطيط
           fit: BoxFit.contain,
 
           cacheManager: CacheManager(
@@ -220,8 +214,6 @@ class _DrugItemCardState extends State<DrugItemCard> {
               maxNrOfCacheObjects: 1000,
             ),
           ),
-          maxHeightDiskCache: 200,
-          maxWidthDiskCache: 200,
 
           placeholder: (context, url) => const Center(
             child: SizedBox(
@@ -232,14 +224,14 @@ class _DrugItemCardState extends State<DrugItemCard> {
             ),
           ),
 
-          // خطة الطوارئ للشبكة المحلية الحالية مع الحفاظ التام على أبعاد العلب المتنوعة
+          // خطة الطوارئ للشبكة المحلية الحالية مع الحفاظ التام على توازن الفراغات
           errorWidget: (context, url, error) => Image.network(
             imageStr,
-            fit: BoxFit.contain, // حماية أبعاد الأشكال المتنوعة في خطة الطوارئ
+            fit: BoxFit.contain, // أبعاد حقيقية متناسقة في الطوارئ أيضاً
             cacheHeight: 200,
             cacheWidth: 200,
             errorBuilder: (c, e, s) =>
-                const Icon(Icons.broken_image, size: 35, color: Colors.grey),
+                const Icon(Icons.broken_image, size: 40, color: Colors.grey),
           ),
         ),
       );
@@ -247,19 +239,14 @@ class _DrugItemCardState extends State<DrugItemCard> {
 
     // كود احتياطي (Fallback) في حال وجود صور قديمة في السيرفر لا تزال بصيغة Base64
     try {
-      return Container(
-        width: 65,
-        height: 65,
-        padding: const EdgeInsets.all(4),
-        decoration: BoxDecoration(
-          color: const Color(0xFFF4F7F8),
-          borderRadius: BorderRadius.circular(8),
-        ),
+      return SizedBox(
+        width: 60,
+        height: 60,
         child: Image.memory(
           base64Decode(imageStr),
-          fit: BoxFit.contain, // 🔒 تصحيح المط للـ Base64 أيضاً
+          fit: BoxFit.contain, // التناسق الأصلي للـ Base64 لتوحيد الفراغات
           errorBuilder: (c, e, s) =>
-              const Icon(Icons.broken_image, size: 35, color: Colors.grey),
+              const Icon(Icons.broken_image, size: 40, color: Colors.grey),
         ),
       );
     } catch (e) {
