@@ -6,6 +6,16 @@ import '../cart_item.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
+// ignore: non_constant_identifier_names
+final CustomCacheManager = CacheManager(
+  Config(
+    'drugs_images_cache_key',
+    stalePeriod:
+        const Duration(days: 1), // ⏳ صلاحية الكاش مستمرة ليوم كامل بأمان
+    maxNrOfCacheObjects: 1000, // حد أقصى للصور المخزنة بالخلفية
+  ),
+);
+
 class DrugsScreen extends StatefulWidget {
   final int companyId;
   final String companyName;
@@ -220,13 +230,8 @@ class _DrugItemCardState extends State<DrugItemCard> {
           // ✅ الـ BoxFit.contain الأصلي الخاص بك الذي يضمن بقاء علبة الكريم مستطيلة نحيفة كما هي دون تمطيط
           fit: BoxFit.contain,
 
-          cacheManager: CacheManager(
-            Config(
-              'drugs_images_cache_key',
-              stalePeriod: const Duration(days: 1),
-              maxNrOfCacheObjects: 1000,
-            ),
-          ),
+          // 🔒 حقن مدير الكاش الثابت والعالمي لقطع الاتصالات المتكررة وتصفير حزم الصور في إدارة المهام (0 Kbps)
+          cacheManager: CustomCacheManager,
 
           placeholder: (context, url) => const Center(
             child: SizedBox(
