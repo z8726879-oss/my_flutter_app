@@ -29,13 +29,13 @@ jobs:
         run: |
           flutter pub upgrade
           flutter pub get
-          flutter build apk --debug --android-skip-build-dependency-validation
+          flutter build apk --release --split-per-abi --android-skip-build-dependency-validation
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: android-apk
-          path: build/app/outputs/flutter-apk/app-debug.apk
+          path: build/app/outputs/flutter-apk/app-release.apk
 
   ios-job:
     runs-on: macos-latest
@@ -68,10 +68,10 @@ jobs:
       # البناء النهائي المستقر والناجح حتماً
       - name: Build iOS Application
         run: |
-          flutter build ios --simulator --no-codesign --debug
+          flutter build ios --no-codesign --release
 
       - name: Upload iOS App
         uses: actions/upload-artifact@v4
         with:
           name: ios-app-simulator
-          path: build/ios/iphonesimulator/*.app
+          path: build/ios/iphoneos/Runner.app
