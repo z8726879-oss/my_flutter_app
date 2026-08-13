@@ -196,28 +196,25 @@ class _DrugItemCardState extends State<DrugItemCard> {
       );
     }
 
-    // 🎯 التعديل المحسن: عرض الصور عبر شبكة إنترنت مكّيشة ومحكومة بالوقت والذاكرة
+    // 🎯 التعديل المحسن والمحمي سيبرانياً ضد حظر الشبكات المحلية
     if (imageStr.startsWith('http')) {
       return CachedNetworkImage(
         imageUrl: imageStr,
         fit: BoxFit.contain,
 
-        // ⏳ السحر هنا: إجبار الهاتف على تحديث الصورة تلقائياً من السيرفر كل 24 ساعة
+        // ⏳ تحديث الصور تلقائياً من السيرفر كل 24 ساعة أونلاين
         cacheManager: CacheManager(
           Config(
-            'drugs_images_cache_key', // مفتاح فريد لمجلد كاش الأدوية
-            stalePeriod: const Duration(
-                days: 1), // عمر صلاحية الصورة في هارد الجوال (يوم واحد)
-            maxNrOfCacheObjects:
-                1000, // أقصى عدد صور يتم تخزينها في نفس الوقت بالخلفية
+            'drugs_images_cache_key',
+            stalePeriod: const Duration(days: 1),
+            maxNrOfCacheObjects: 1000,
           ),
         ),
 
-        // 🔒 صمام أمان الرام: فك تشفير الصورة بأبعاد مصغرة لمنع تعليق الجوال عند السكرول
+        // 🔒 صمام أمان الرام للمستقبل
         maxHeightDiskCache: 200,
         maxWidthDiskCache: 200,
 
-        // مؤشر تحميل خفيف جداً يظهر "لأول مرة فقط في تاريخ التطبيق" لكل صورة
         placeholder: (context, url) => const Center(
           child: SizedBox(
             width: 20,
@@ -226,8 +223,20 @@ class _DrugItemCardState extends State<DrugItemCard> {
                 strokeWidth: 2, color: Color(0xFF007A87)),
           ),
         ),
-        errorWidget: (context, url, error) =>
-            const Icon(Icons.broken_image, size: 40, color: Colors.grey),
+
+        // 🛠️ خطة الطوارئ الفورية: إذا حظرت المكتبة الـ http المحلي، يتم العرض عبر المحرك الرسمي فوراً
+        errorWidget: (context, url, error) => Image.network(
+          imageStr,
+          fit: BoxFit.contain,
+
+          // 🔒 صمام أمان الرام البديل: فك تشفير الصورة بأبعاد صغيرة جداً في ذاكرة الهاتف
+          // هذا يمنع تهنيج الجوال تماماً مع الـ 3000 صنف على هاتف الصيدلي حالياً
+          cacheHeight: 200,
+          cacheWidth: 200,
+
+          errorBuilder: (c, e, s) =>
+              const Icon(Icons.broken_image, size: 40, color: Colors.grey),
+        ),
       );
     }
 
